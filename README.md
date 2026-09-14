@@ -113,11 +113,18 @@ partial derivatives; the certificate is checked by a verified checker
 derivatives over the `2 ^ k` atoms of the `k` primitive tests
 (`KAT.KTerm.gs_eq_of_decideEq`), after unfolding `ifThenElse`, `whileDo` and `HoareTriple`.
 
-The tactics are proved sound for **complete** (star-continuous) Kleene algebras and KATs
-(`CompleteKleeneAlgebra`: relations, languages, and anything built from them), via
-`KleeneAlgebra.Term.eval_eq_of_lang_eq` and `KAT.KTerm.eval_eq_of_decideEq`.  Pous' tactics
-are sound for *all* KAs/KATs because his library proves Kozen's completeness theorems; that
-is the main remaining gap (see below).
+**Scope of the soundness proofs.** The tactics are proved sound for *complete* Kleene
+algebras and KATs (`CompleteKleeneAlgebra`: a Kleene algebra whose order is a complete lattice
+and whose multiplication preserves arbitrary joins).  This is stronger than star-continuity.
+The instances provided are relations `SetRel α α` (with tests `Set α`) and languages
+`Language α` (with the trivial tests `Bool`); in particular `ka` does not (yet) apply to
+matrices, whose `CompleteKleeneAlgebra` instance is not provided, nor to a goal stated for an
+arbitrary `[KleeneAlgebra K]`.  The soundness statements
+(`KleeneAlgebra.Term.eval_eq_of_lang_eq`, `KAT.KTerm.eval_eq_of_decideEq`) are of the form
+"if the checker accepts a certificate, the equation holds"; the search is bounded by fuel, so
+a failure means either an invalid equation or exhausted fuel, and no completeness of the
+search is proved.  Pous' tactics are sound for *all* KAs/KATs because his library proves
+Kozen's completeness theorems; that is the main remaining gap (see below).
 
 ```lean
 open scoped SetRel KAT
@@ -143,9 +150,13 @@ procedures, on top of Mathlib.  Remaining differences and natural next steps:
 1. **Completeness.** Kozen's completeness theorem for KA (w.r.t. `Language`) and
    Kozen–Smith's for KAT (w.r.t. guarded strings) would make `ka`/`kat` sound in arbitrary
    KAs/KATs, not only complete ones.  The matrix construction here is the main ingredient.
-2. **Typed KAT and typed matrices** in the `KleeneCategory` setting (heterogeneous relations
+   This is the priority: abstract `[KleeneAlgebra K]` / `[KAT T K]` goals currently have no
+   automation beyond the lemma library.
+2. **`CompleteKleeneAlgebra (Matrix n n K)`** for complete `K`, so that `ka` applies to
+   matrices over relations or languages.
+3. **Typed KAT and typed matrices** in the `KleeneCategory` setting (heterogeneous relations
    `SetRel α β`, rectangular matrices as morphisms).
-3. **Computable stars**: the star on `Matrix n n K` is noncomputable (it goes through
+4. **Computable stars**: the star on `Matrix n n K` is noncomputable (it goes through
    `Fintype.equivFin`); a computable version for `Fin n` is easy to add.
-4. **More of the lattice hierarchy**: residuals, `ra` decision procedure for relation
+5. **More of the lattice hierarchy**: residuals, `ra` decision procedure for relation
    algebra fragments, allegories.

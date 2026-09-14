@@ -1,6 +1,5 @@
 import RelationAlgebra.Decide.Tactic
 import RelationAlgebra.Decide.KATTactic
-import RelationAlgebra.Models.Bool
 
 /-!
 # Examples for the `ka` and `kat` tactics
@@ -68,6 +67,21 @@ example : KAT.whileDo s R = KAT.whileDo s (R * KAT.whileDo s R) := by kat
 example : KAT.HoareTriple ⊤ (KAT.whileDo s R) sᶜ := by kat
 
 example : ⌜s⌝ * R ≤ R + ⌜t⌝ := by kat
+
+/-- `\` and `⇨` on tests are normalised before reification. -/
+example : ⌜s \ t⌝ * R = ⌜s⌝ * ⌜tᶜ⌝ * R := by kat
+
+example : ⌜s ⇨ t⌝ = (⌜sᶜ⌝ : SetRel α α) + ⌜t⌝ := by kat
+
+/-- The preprocessing alone may close the goal. -/
+example : KAT.HoareTriple s R t = (⌜s⌝ * R * ⌜tᶜ⌝ = 0) := by kat
+
+-- `kat` acts on the main goal only; other goals are left alone.
+set_option linter.style.multiGoal false in
+example (R : SetRel ℕ ℕ) : R = R ∧ True := by
+  constructor
+  kat
+  trivial
 
 end KATRelations
 

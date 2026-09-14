@@ -33,7 +33,7 @@ example (b : T) (p : K) : KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ :=
 /-- A test placed before a loop whose body preserves it is still true afterwards. -/
 example (b c : T) (p : K) (h : KAT.HoareTriple (b ⊓ c) p c) :
     KAT.HoareTriple c (KAT.whileDo b p) c :=
-  (KAT.HoareTriple.whileDo h).strengthen_post inf_le_right
+  (KAT.HoareTriple.whileDo h).weaken_post inf_le_right
 
 end Abstract
 

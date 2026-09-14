@@ -129,15 +129,15 @@ theorem consequence (hb : b' ≤ b) (h : HoareTriple b p c) (hc : c ≤ c') :
     _ ≤ p * ⌜c⌝ := h
     _ ≤ p * ⌜c'⌝ := mul_test_le_mul_test _ hc
 
-theorem weaken_pre (hb : b' ≤ b) (h : HoareTriple b p c) : HoareTriple b' p c :=
+theorem strengthen_pre (hb : b' ≤ b) (h : HoareTriple b p c) : HoareTriple b' p c :=
   consequence hb h le_rfl
 
-theorem strengthen_post (h : HoareTriple b p c) (hc : c ≤ c') : HoareTriple b p c' :=
+theorem weaken_post (h : HoareTriple b p c) (hc : c ≤ c') : HoareTriple b p c' :=
   consequence le_rfl h hc
 
 /-- `{c} while b do p {bᶜ}`: the loop guard fails on exit. -/
 theorem whileDo_exit (b : T) (p : K) : HoareTriple ⊤ (KAT.whileDo b p) bᶜ :=
-  (whileDo (top _ _)).strengthen_post inf_le_left
+  (whileDo (top _ _)).weaken_post inf_le_left
 
 end HoareTriple
 

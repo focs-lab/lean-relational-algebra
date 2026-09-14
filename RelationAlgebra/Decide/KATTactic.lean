@@ -1,5 +1,6 @@
 import RelationAlgebra.Decide.KATSound
 import RelationAlgebra.KAT.Hoare
+import RelationAlgebra.Models.Bool
 
 /-!
 # The `kat` tactic
@@ -12,7 +13,11 @@ semantics are compared by `KAT.KTerm.decideEq` (kernel-evaluated), and
 `KAT.KTerm.eval_eq_of_decideEq` turns the certificate into the goal.
 
 Guarded commands `KAT.ifThenElse`, `KAT.whileDo` and Hoare triples `KAT.HoareTriple` are
-unfolded first, so `kat` proves e.g. `KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` directly.
+unfolded first, so `kat` proves e.g. `KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` directly.  The
+Boolean operations `\` and `⇨` on tests are rewritten to `⊓`, `⊔`, `ᶜ` (by `sdiff_eq`,
+`himp_eq`) in the same preprocessing step, since only the latter are interpreted
+definitionally by the reification.  When no test occurs in the goal the trivial tests `Bool`
+are used.
 
 `kat n` uses `n` units of fuel (default `1000`).  The number of atoms is `2 ^ k` for `k`
 distinct primitive tests, so goals with many tests are expensive.
@@ -67,12 +72,6 @@ partial def reifyB (e : Expr) : KatM Expr := do
   | (``Compl.compl, #[_, _, a]) => return mkApp (mkConst ``KAT.BTerm.not) (← reifyB a)
   | (``Top.top, #[_, _]) => return mkConst ``KAT.BTerm.top
   | (``Bot.bot, #[_, _]) => return mkConst ``KAT.BTerm.bot
-  | (``SDiff.sdiff, #[_, _, a, b]) =>
-    return mkApp2 (mkConst ``KAT.BTerm.and) (← reifyB a)
-      (mkApp (mkConst ``KAT.BTerm.not) (← reifyB b))
-  | (``HImp.himp, #[_, _, a, b]) =>
-    return mkApp2 (mkConst ``KAT.BTerm.or) (mkApp (mkConst ``KAT.BTerm.not) (← reifyB a))
-      (← reifyB b)
   | _ => return mkApp (mkConst ``KAT.BTerm.tvar) (mkNatLit (← addTest e))
 
 /-- Reify a KAT expression into a `KAT.KTerm`. -/
@@ -106,8 +105,11 @@ def kernelIsTrue (p : Expr) : MetaM Bool := do
   | .error _ => return false
 
 /-- The core of the `kat` tactic. -/
-def katCore (fuel : ℕ) : TacticM Unit := do
-  evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple]))
+def katCore (fuel : ℕ) : TacticM Unit := focus do
+  evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple,
+    sdiff_eq, himp_eq]))
+  -- only the original goal is in scope here (`focus`); the preprocessing may have closed it
+  if (← getGoals).isEmpty then return
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)
