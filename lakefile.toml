@@ -1,0 +1,20 @@
+name = "relation_algebra"
+version = "0.1.0"
+keywords = ["math", "kleene algebra", "KAT", "relations"]
+defaultTargets = ["RelationAlgebra"]
+
+[leanOptions]
+pp.unicode.fun = true
+relaxedAutoImplicit = false
+autoImplicit = false
+weak.linter.mathlibStandardSet = true
+weak.linter.style.header = false
+maxSynthPendingDepth = 3
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.30.0"
+
+[[lean_lib]]
+name = "RelationAlgebra"
