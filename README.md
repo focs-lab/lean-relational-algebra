@@ -75,10 +75,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "15104c6d4626eaa1b0224c60718d6b51284a54a7"
+rev = "8502d9911da9f48881659ee9b4699568bb672081"
 ```
 
-This pins the library to a revision with typed `kat` and KA/KAT completeness.
+This pins the library to a revision with typed `kat`, KA/KAT completeness, and algebraic
+untyping.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -219,6 +220,12 @@ example {C : Type*} [Category C] [KleeneCategory C]
 including source and target guards, loops, and inequalities, are in
 [Examples/TypedDecide](RelationAlgebra/Examples/TypedDecide.lean).
 
+To reuse an untyped law directly, use
+[`TypedKAT.Term.eval_eq_of_erase_eval_eq`](RelationAlgebra/TypedKAT/Untyping.lean), or
+`eval_le_of_erase_eval_le` for inequalities. Prove the law for the erased expressions over
+arbitrary untyped KATs; the theorem transports it to any typed interpretation. No atom bound
+or checker fuel is required. See [worked examples](RelationAlgebra/Examples/Untyping.lean).
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -241,6 +248,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Automata and Kozen's completeness proof | [Automata](RelationAlgebra/Automata), [Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean) |
 | Kozen–Smith completeness for KAT (untyped) | [KATCompleteness](RelationAlgebra/KATCompleteness) |
 | Typed KAT completeness and reflection | [TypedKATCompleteness](RelationAlgebra/TypedKATCompleteness) |
+| Reusing untyped laws in typed models | [TypedKAT/Untyping](RelationAlgebra/TypedKAT/Untyping.lean), [examples](RelationAlgebra/Examples/Untyping.lean) |
 | The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
 
@@ -258,8 +266,9 @@ KA completeness and untyped KAT completeness are done, so `ka`, `kat` and `hkat`
 arbitrary Kleene algebras. Typed expressions and their guarded-string semantics are now
 available, with completeness proved for arbitrary typed KATs: composition checks endpoints,
 tests have an interpretation at each object, and only endomorphisms can be iterated.
-`kat` now reifies typed goals directly. The next priorities are the **algebraic untyping
-interface**, typed `hkat`, and packaging the typed free models. Further work
+`kat` reifies typed goals directly, and the algebraic untyping interface transports
+universally valid untyped laws to typed models. The next priorities are **typed `hkat`**
+and packaging the typed free models. Further work
 includes extending `ra` beyond the Kleene fragment and proving Paterson's flowchart equivalence.
 [PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
