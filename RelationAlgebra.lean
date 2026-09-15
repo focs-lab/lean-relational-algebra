@@ -11,7 +11,10 @@ import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
+import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.Matrix
+import RelationAlgebra.Models.SetoidRel
+import RelationAlgebra.Models.FinRel
 import RelationAlgebra.Decide.Term
 import RelationAlgebra.Decide.Antimirov
 import RelationAlgebra.Decide.Tactic
