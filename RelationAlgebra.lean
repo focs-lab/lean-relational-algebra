@@ -13,6 +13,7 @@ import RelationAlgebra.Typed
 import RelationAlgebra.TypedKAT
 import RelationAlgebra.TypedKAT.Syntax
 import RelationAlgebra.TypedKAT.GuardedString
+import RelationAlgebra.TypedKAT.Untyping
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
