@@ -89,7 +89,7 @@ corresponding to `level.v`.
 | `srel.v` (setoid relations) | D,T | `Models/SetoidRel.lean` | **partial** | the *homogeneous* model `SetoidRel α` is complete (complete KA, relation algebra, KAT with tests the subsets of the quotient, `Relation.ReflTransGen` characterisation of the star).  Upstream's `srel n m` is **heterogeneous**, between two different setoids; that is not ported |
 | `fhrel.v` (finite relations) | D,T,A | `Models/FinRel.lean` | **partial** | `FinRel α β` is heterogeneous, and `FinRel.comp : FinRel α β → FinRel β γ → FinRel α γ` already gives heterogeneous composition, as do the Boolean-algebra and decidability instances.  What is missing is the **categorical layer around it**: associativity and identity laws for `comp` across different index types, its monotonicity and distribution over `+`, a heterogeneous converse, the `KleeneCategory` instance, and the isomorphism with `SetRel α β`.  The `Mul`/`One`/`KStar`/KAT instances, the computable transitive closure and the `SetRel` isomorphism exist only for `FinRel α α` |
 | `traces.v` (finite traces) | D,T | `Models/Trace.lean` | **partial** | untyped model done (complete KA + KAT + iso with `Language`); the *typed* trace model is not ported |
-| `glang.v` (guarded string languages) | D,T | `Models/Trace.lean`, `Decide/GuardedString.lean`, `TypedKAT/GuardedString.lean` | **partial** | the untyped model is done. Typed languages now carry proofs of action-path typing and atom bounds, with union, fusion and iteration. Expression semantics and its correspondence with erasure are proved. A bundled `KleeneCategoryWithTests` instance for these typed languages is not yet provided |
+| `glang.v` (guarded string languages) | D,T | `Models/Trace.lean`, `Decide/GuardedString.lean`, `TypedKAT/GuardedString.lean`, `TypedKAT/LanguageModel.lean` | **done for the fixed-bound typed model** | `LanguageCat src tgt k` is a `KleeneCategoryWithTests` on the existing well-typed language hom-sets, with tests the sets of atoms of length `k`. Both rectangular induction rules and injectivity of tests are proved. `Term.eval_languageCat` identifies ordinary evaluation in this model with `Term.lang`. The expression quotient and its free-model universal property remain tracked under `gregex.v` |
 | `matrix.v` (typed matrices) | D,T | `Models/Matrix.lean`, `Models/MatrixExt.lean` | **partial** | square matrices, block star formula, uniqueness, complete-KA instance, computable star for `Fin n`, diagonal tests (KAT), and a `KleeneCategory` of rectangular matrices are all done; matrix **residuals** are not |
 | `matrix_ext.v` | T | `Models/MatrixExt.lean` | **partial** | the rectangular induction and bisimulation rules, block-triangular stars, the complete-KA instance, a computable star for `Fin n`, diagonal tests and a matrix `KleeneCategory`.  Upstream's `mx_scal`/`scal_mx` homomorphism lemmas are not ported |
 | `bmx.v` (Boolean matrices, rt-closure) | D,T | `Automata/ZeroOne.lean`, `Models/FinRel.lean` | **partial** | the characterisation is proved in the stronger form `Matrix.ofRel_kstar`: the star of a zero-one matrix over **any** Kleene algebra is the zero-one matrix of `Relation.ReflTransGen`.  Upstream's `bmx` type itself (square matrices over `bool` as a Kleene algebra) is not built; the closest object here is `FinRel α α` |
@@ -195,9 +195,10 @@ DONE: finite morphism matrices + finite support → typed KAT completeness and r
 DONE: dependent valuations + categorical reification → typed `kat`
 DONE: finite matrix recovery + finite support → algebraic KAT untyping interface
 DONE: typed Hoare conversions + action paths → typed `hkat`
+DONE: typed language operations + bounded-atom tests → bundled guarded-string KAT model
 
 REMAINING, in dependency order:
-  free-model packaging for typed syntax and guarded-string languages
+  typed expression quotient, semantic equivalence/order, and free-model universal property
   untyping.v (for KA with converse)
   `ra` over the full lattice/residual syntax (the Kleene fragment is done)
   paterson (unblocked: `hkat` exists)
@@ -205,7 +206,7 @@ REMAINING, in dependency order:
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
   strict iteration `x⁺` and its induction rules (upstream `kleene.v`)
   heterogeneous models: `srel n m`, `fhrel A B` composition, `rel` with converse
-  typed trace model and bundled typed guarded-string model (upstream `traces.v`, `glang.v`)
+  general typed trace model (upstream `traces.v`; the fixed-bound guarded-string model is done)
   typed residuals and matrix residuals (upstream `monoid.v`, `matrix.v`)
   concrete assignment for IMP (upstream `imp.v`: `aff_stack`, `aff_comm`, `aff_ite`)
 ```
@@ -351,6 +352,7 @@ is imposed on the caller. Equality in one particular model is not a sufficient p
 | Algebraic KAT untyping | **met for evaluation transport**: both equality and inequality interfaces are proved without atom bounds or fuel. `Examples/Untyping.lean` covers independent tests, object identifications, arbitrary test indices, infinite higher-universe object alphabets, concrete relations, and rejection of a single-interpretation premise |
 | Typed `kat` | **met**: `Examples/TypedDecide.lean` proves heterogeneous sliding, test identities, guarded inequalities, conditionals, and loops through `kat`, with abstract categories and concrete relations. Regressions also cover binders, multiple goals, insufficient fuel, and invalid identities |
 | Typed `hkat` | **met for the tactic**: `Examples/TypedHypotheses.lean` covers heterogeneous sequencing, loops, Boolean and guarded constraints, endomorphism rewrites, concrete relation constructors, binders, multiple goals, and invalid consequences. Zero hypotheses are composed with well-typed action paths before being joined. Search and elimination completeness remain unproved |
+| Typed guarded-string model | **met at fixed atom bound**: `LanguageCat src tgt k` has `Category`, `KleeneCategory`, and `TypedKAT` instances. `Term.eval_languageCat` proves exact agreement with `Term.lang`. `Examples/LanguageModel.lean` covers heterogeneous rules and tactics, canonical evaluation, membership and fusion, malformed atoms, zero test variables, and actual iteration |
 | `hkat` | **met for the tactic**: `RelationAlgebra/Decide/HKATTactic.lean` closes `⌜b⌝*p ≤ p*⌜b⌝ ⊢ ⌜b⌝*p∗ ≤ p∗*⌜b⌝`, which `kat` alone provably cannot (checked with `fail_if_success kat`), merges several hypotheses, and leaves other goals untouched.  Not met for Hardin–Kozen completeness, which is not formalised |
 | `ra`/`ra_normalise` | **met for the Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
 | `imp` | big-step semantics defined inductively, proved equal to the KAT denotation, and Hoare rules derived |
@@ -365,18 +367,19 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 
 Pick up here, in this order:
 
-1. **Typed free models** — package semantic equivalence/order on typed syntax, bundle the
-   typed guarded-string KAT model, and expose erasure preservation on semantic equivalence.
-   Typed completeness, `kat`, `hkat`, and algebraic evaluation transport are already available;
-   `Examples/TypedHypotheses.lean` exercises the latest tactic interface.
+1. **Typed expression quotient** — package semantic equivalence/order on typed syntax, prove
+   the free-model universal property, and expose erasure preservation on semantic equivalence.
+   The fixed-bound guarded-string KAT model is now bundled in `TypedKAT/LanguageModel.lean`;
+   `Term.eval_languageCat` connects ordinary evaluation with the existing semantics.
+   `Examples/LanguageModel.lean` exercises the model with generic rules, `kat`, and `hkat`.
 2. **`examples/paterson.v`** — large but self-contained, and unblocked now that `hkat` exists.
 3. **Remaining hierarchy and untyping parity** — port the separate KA-with-converse untyping
    theorem and the typed interfaces still marked partial in the inventory.
 4. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
    extending `ra` to `⊓`, `ᶜ`, `⊤` and residuals rather than treating them as atoms.
 5. **The independent gaps listed at the end of §8**, none of which blocks anything else:
-   strict iteration, the heterogeneous models, the typed trace model and bundled guarded-string
-   model, and IMP's concrete assignment.
+   strict iteration, the heterogeneous models, the general typed trace model, and IMP's
+   concrete assignment.
 
 ## 10. Session log
 
@@ -391,3 +394,4 @@ Pick up here, in this order:
 | 2026-09-15 (typed automation) | Added categorical reification to `kat`, using typed completeness and dependent environments for objects, actions, and tests. Supports equality, inequality, Boolean normalization, typed conditionals, loops, and Hoare triples. Added 31 regression declarations for heterogeneous relations, binders, multiple goals, invalid identities, and insufficient fuel. Axiom audits of the tactic proofs and reflection lemmas report only `propext`, `Classical.choice`, and `Quot.sound`. Typed `hkat` and the algebraic untyping interface remain next. |
 | 2026-09-16 (algebraic untyping) | Added `TypedKAT.Term.eval_eq_of_erase_eval_eq` and `eval_le_of_erase_eval_le`, transporting universally valid untyped laws to arbitrary typed interpretations through finite matrix recovery. No atom bounds or fuel are needed. Added 10 regression declarations covering independent tests, object identifications, arbitrary indices, higher universes, concrete relations, and rejection of a single-interpretation premise. Full build: 1520 jobs, zero warnings. Audited theorem and example proofs use only `propext`, `Classical.choice`, and `Quot.sound`. Typed `hkat` remains next. |
 | 2026-09-16 (typed hypotheses) | Added 14 typed Hoare conversion and elimination lemmas, plus categorical `hkat` using state elimination to build well-typed action paths around zero hypotheses. Boolean facts are instantiated at every matching object, including constant test families. Added 40 regression declarations covering heterogeneous sequencing and iteration, guarded constraints, rewriting, concrete relation constructors, rectangular matrices, binders, multiple goals, insufficient fuel, and invalid consequences. Full build: 1524 jobs, zero warnings. Axiom audits of all 14 lemmas and six named tactic proofs use only `propext`, `Classical.choice`, and `Quot.sound`. Search and elimination completeness remain unproved; typed free-model packaging is next. |
+| 2026-09-16 (typed language model) | Bundled the existing typed guarded-string languages as `LanguageCat src tgt k`, with tests the sets of bounded atoms. Proved category laws, both rectangular star-induction rules, test injectivity, and `Term.eval_languageCat`, identifying canonical evaluation with `Term.lang`. Added `LanguageCat.Tests X` and `testVarAt X i` for object inference in test notation, and 18 regression declarations. Full build: 1526 jobs, zero warnings. Axiom audits of 26 public theorems, seven named regression proofs, and the three model instances use only `propext`, `Classical.choice`, and `Quot.sound`. The typed expression quotient and its universal property remain next. |

@@ -75,7 +75,7 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "f5bdb8849fd3ac6aec668e7958bd33b519afd726"
+rev = "a76296f36583d023da716e90055f582affd96cd7"
 ```
 
 This pins the library to a revision with typed `kat`, KA/KAT completeness, and algebraic
@@ -237,6 +237,12 @@ To reuse an untyped law directly, use
 arbitrary untyped KATs; the theorem transports it to any typed interpretation. No atom bound
 or checker fuel is required. See [worked examples](RelationAlgebra/Examples/Untyping.lean).
 
+For guarded-string semantics, `TypedKAT.LanguageCat src tgt k` is a typed KAT with atoms
+of length `k`, over an arbitrary object alphabet. Use `LanguageCat.Tests X` for tests at
+object `X`, and `testVarAt X i` for a primitive test. `Term.eval_languageCat` proves that
+canonical interpretation agrees with `Term.lang`. See the
+[language-model examples](RelationAlgebra/Examples/LanguageModel.lean).
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -253,6 +259,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Converse, relation algebra, residuals, allegories, vectors and points | [Converse](RelationAlgebra/Converse.lean), [Residuated](RelationAlgebra/Residuated.lean), [Allegory](RelationAlgebra/Allegory.lean), [Vectors](RelationAlgebra/Vectors.lean) |
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](RelationAlgebra/Typed.lean), [TypedKAT](RelationAlgebra/TypedKAT.lean) |
 | Typed expressions and guarded-string semantics | [TypedKAT/Syntax](RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](RelationAlgebra/TypedKAT/GuardedString.lean), [examples](RelationAlgebra/Examples/TypedSyntax.lean) |
+| Guarded-string languages as a typed KAT model | [TypedKAT/LanguageModel](RelationAlgebra/TypedKAT/LanguageModel.lean), [examples](RelationAlgebra/Examples/LanguageModel.lean) |
 | Tactics, derivatives, and soundness proofs | [Decide](RelationAlgebra/Decide) |
 | Hoare hypotheses and the `hkat` tactic | [KAT/Hypotheses](RelationAlgebra/KAT/Hypotheses.lean), [typed hypotheses](RelationAlgebra/TypedKAT/Hypotheses.lean), [Decide/HKATTactic](RelationAlgebra/Decide/HKATTactic.lean) |
 | Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
@@ -279,7 +286,8 @@ available, with completeness proved for arbitrary typed KATs: composition checks
 tests have an interpretation at each object, and only endomorphisms can be iterated.
 `kat` reifies typed goals directly, `hkat` uses hypotheses across objects, and the algebraic
 untyping interface transports universally valid untyped laws to typed models. The next
-priority is packaging the typed free models. Further work
+priority is the typed expression quotient and its universal property; the guarded-string
+language model is now bundled as a typed KAT. Further work
 includes extending `ra` beyond the Kleene fragment and proving Paterson's flowchart equivalence.
 [PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
