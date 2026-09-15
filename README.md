@@ -73,10 +73,10 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "ed50be231ce6b2699f91a98c19ada90c17b3b885"
+rev = "be2276d254a7e630e05c8d648b2d14d22541c96f"
 ```
 
-This pins the library to a published revision with KA and untyped KAT completeness.
+This pins the library to a published revision with KA and both untyped and typed KAT completeness.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -131,11 +131,16 @@ guarded-string semantics have the same value in every KAT. Neither completeness 
 star-continuity, commutativity nor finiteness is assumed. Relations have tests `Set α`;
 languages have the trivial tests `Bool`.
 
+**Typed KAT completeness** is also proved in
+[TypedKATCompleteness/Main](RelationAlgebra/TypedKATCompleteness/Main.lean), for arbitrary
+categories and object alphabets. Explicit typed expressions can use its equality and
+inequality reflection lemmas; see [typed examples](RelationAlgebra/Examples/TypedCompleteness.lean).
+
 `ra` requires `[KleeneAlgebra K] [StarRing K]`, which a `RelationAlgebra` instance supplies.
 
 Three guarantees are worth keeping apart. *Accepting-checker soundness* is proved for all four
 tactics: if the checker accepts, the goal holds. *Algebraic completeness* is proved for Kleene
-algebra, and for KAT in the untyped case. *Search completeness* is proved for none of them.
+algebra and for both untyped and typed KAT. *Search completeness* is proved for none of them.
 
 `ka`, `kat` and `hkat` search for bisimulation certificates using derivatives, and Lean's
 kernel checks the resulting proofs. Search uses **1,000 units of fuel** by default; try
@@ -151,8 +156,8 @@ Keep these limits in mind:
 - `ka`, `kat` and `ra` ignore the local context. `hkat` is the one that reads it: it turns
   Hoare-style hypotheses into the form `z ≤ 0`, merges them, eliminates them à la
   Hardin–Kozen, and then calls `kat`.
-- `kat` and `hkat` do not support typed categorical goals; the typed completeness theorem is
-  not formalised.
+- `kat` and `hkat` do not yet reify typed categorical goals. Typed completeness is available
+  through the explicit expression and reflection APIs.
 - `ra` covers `0`, `1`, `+`, `*`, `∗` and converse. It treats `⊓`, `ᶜ`, `⊤` and residuals as
   opaque atoms, and it is a normaliser rather than a decision procedure, so it is incomplete
   by design, as upstream's is.
@@ -203,6 +208,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
 | Automata and Kozen's completeness proof | [Automata](RelationAlgebra/Automata), [Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean) |
 | Kozen–Smith completeness for KAT (untyped) | [KATCompleteness](RelationAlgebra/KATCompleteness) |
+| Typed KAT completeness and reflection | [TypedKATCompleteness](RelationAlgebra/TypedKATCompleteness) |
 | The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
 
@@ -218,10 +224,11 @@ about what is proved and what is not.
 
 KA completeness and untyped KAT completeness are done, so `ka`, `kat` and `hkat` all work in
 arbitrary Kleene algebras. Typed expressions and their guarded-string semantics are now
-available: composition checks endpoints, tests have an interpretation at each object, and
-only endomorphisms can be iterated. The priority is **typed KAT completeness**, followed by
-algebraic untyping and typed tactic support. Further work includes extending `ra` beyond the
-Kleene fragment and Paterson's flowchart equivalence. [PORTING.md](PORTING.md) has the
+available, with completeness proved for arbitrary typed KATs: composition checks endpoints,
+tests have an interpretation at each object, and only endomorphisms can be iterated.
+The priority is **typed tactic support** and the algebraic untyping interface. Further work
+includes extending `ra` beyond the Kleene fragment and proving Paterson's flowchart equivalence.
+[PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
 
 ## Credits and references
@@ -231,10 +238,9 @@ dependency-ordered plan and an exact continuation point.
 credit for the Rocq/Coq development that motivates this project: its treatment of tests and
 typed algebras, and its use of derivatives and reflection for automated proofs.
 Its [documentation](https://perso.ens-lyon.fr/damien.pous/ra/) is a valuable companion.
-That library goes further than this one in several respects: it proves KAT completeness in the
-*typed* setting, where only the untyped statement is proved here, its `ra` covers the whole
-lattice and residual syntax rather than just the Kleene fragment, and its structures are typed
-throughout. [PORTING.md](PORTING.md) records the gaps module by module.
+That library goes further than this one in several respects: its tactics support typed goals,
+its `ra` covers the whole lattice and residual syntax, and its structures are typed throughout.
+[PORTING.md](PORTING.md) records the gaps module by module.
 
 We also build on the work of the **[Lean](https://github.com/leanprover/lean4)** and
 **[Mathlib](https://github.com/leanprover-community/mathlib4)** contributors, reusing their
@@ -246,7 +252,7 @@ The main mathematical and mechanization references are:
 - **Dexter Kozen (1994).** [A Completeness Theorem for Kleene Algebras and the Algebra of Regular Events](https://www.cs.cornell.edu/~kozen/papers/ka.pdf). KA axioms, matrices, and completeness.
 - **Dexter Kozen (1997).** [Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/kat.pdf). The KAT framework.
 - **Dexter Kozen (2000).** [On Hoare Logic and Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/Hoare.pdf). The algebraic encoding of partial correctness.
-- **Dexter Kozen and Frederick Smith (CSL 1996).** [Kleene Algebra with Tests: Completeness and Decidability](https://www.cs.cornell.edu/~kozen/Papers/gs.pdf). Guarded strings; the untyped form of this result is proved here in `RelationAlgebra/KATCompleteness/`.
+- **Dexter Kozen and Frederick Smith (CSL 1996).** [Kleene Algebra with Tests: Completeness and Decidability](https://www.cs.cornell.edu/~kozen/Papers/gs.pdf). Guarded strings and KAT completeness; both untyped and typed forms are proved here.
 - **Valentin Antimirov (1996).** [Partial Derivatives of Regular Expressions and Finite Automaton Constructions](https://doi.org/10.1016/0304-3975(95)00182-4). The partial-derivative construction.
 - **Alexander Krauss and Tobias Nipkow (2012).** [Proof Pearl: Regular Expression Equivalence and Relation Algebra](https://www21.in.tum.de/~nipkow/pubs/jar12.pdf). Verified equivalence checking and its application to relations.
 - **Alfred Tarski (1941).** [On the Calculus of Relations](https://doi.org/10.2307/2268577). Foundations of relation algebra.
