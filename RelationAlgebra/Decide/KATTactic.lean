@@ -2,6 +2,7 @@ import RelationAlgebra.KATCompleteness.Main
 import RelationAlgebra.KAT.Hoare
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Decide.KATReify
+import RelationAlgebra.Decide.TypedKATTactic
 
 /-!
 # The `kat` tactic
@@ -13,15 +14,22 @@ with the trivial tests `Bool`) that are valid in all KATs: the two sides are rei
 semantics are compared by `KAT.KTerm.decideEq` (kernel-evaluated), and
 `KAT.Completeness.eval_eq_of_decideEq` turns the certificate into the goal.
 
-Guarded commands `KAT.ifThenElse`, `KAT.whileDo` and Hoare triples `KAT.HoareTriple` are
-unfolded first, so `kat` proves e.g. `KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` directly.  The
+Categorical goals `p = q` or `p ≤ q`, for `p q : X ⟶ Y`, use typed completeness instead.
+The reifier understands `⊥`, `𝟙`, `⊔`, `≫`, `∗` and `TypedKAT.test`, keeping tests separate
+at each object. It needs a `KleeneCategory` and, when tests occur, a `TypedKAT` instance.
+See `RelationAlgebra.Examples.TypedDecide` for heterogeneous examples.
+
+The tactic introduces binders and focuses on one goal. Guarded commands `KAT.ifThenElse`,
+`KAT.whileDo` and Hoare triples `KAT.HoareTriple` are unfolded first, so `kat` proves
+`KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` directly. The
 Boolean operations `\` and `⇨` on tests are rewritten to `⊓`, `⊔`, `ᶜ` (by `sdiff_eq`,
 `himp_eq`) in the same preprocessing step, since only the latter are interpreted
 definitionally by the reification.  When no test occurs in the goal the trivial tests `Bool`
-are used.
+are used. The typed guarded commands and Hoare triples are unfolded as well.
 
 `kat n` uses `n` units of fuel (default `1000`).  The number of atoms is `2 ^ k` for `k`
-distinct primitive tests, so goals with many tests are expensive.
+distinct primitive tests, so goals with many tests are expensive. In typed goals, `k` is
+the largest number of primitive tests at a single object.
 -/
 
 open Lean Meta Elab Tactic
@@ -30,8 +38,9 @@ namespace KAT.Tactic
 
 /-- The core of the `kat` tactic. -/
 def katCore (fuel : ℕ) : TacticM Unit := focus do
+  liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
   evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple,
-    sdiff_eq, himp_eq]))
+    TypedKAT.ifThenElse, TypedKAT.whileDo, TypedKAT.HoareTriple, sdiff_eq, himp_eq]))
   -- only the original goal is in scope here (`focus`); the preprocessing may have closed it
   if (← getGoals).isEmpty then return
   let goal ← getMainGoal
@@ -41,6 +50,9 @@ def katCore (fuel : ℕ) : TacticM Unit := focus do
       | (``Eq, #[K, a, b]) => pure (false, K, a, b)
       | (``LE.le, #[K, _, a, b]) => pure (true, K, a, b)
       | _ => throwError "kat: the goal must be an equality or an inequality"
+    if let some hom ← TypedKAT.Tactic.homType? K then
+      TypedKAT.Tactic.closeGoal goal goalType hom lhs rhs isLe fuel
+      return
     let some v := (← getLevel K).dec
       | throwError "kat: unexpected universe level for {K}"
     let instKA ← try synthInstance (mkApp (mkConst ``KleeneAlgebra [v]) K)
@@ -91,7 +103,8 @@ def katCore (fuel : ℕ) : TacticM Unit := focus do
     goal.assign pf
 
 /-- `kat` decides equalities and inequalities that hold in every Kleene algebra with tests, by
-reflection into guarded-string automata.  The carrier only has to be a `KleeneAlgebra`.
+reflection into guarded-string automata. Supports both `KleeneAlgebra` carriers and morphisms
+in a `KleeneCategory`, with Boolean tests at each object.
 `kat n` uses `n` units of fuel (default `1000`). -/
 syntax (name := kat) "kat" (ppSpace num)? : tactic
 
