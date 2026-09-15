@@ -59,3 +59,4 @@ import RelationAlgebra.Examples.TypedSyntax
 import RelationAlgebra.Examples.TypedCompleteness
 import RelationAlgebra.Examples.TypedDecide
 import RelationAlgebra.Examples.Untyping
+import RelationAlgebra.Examples.TypedHypotheses
