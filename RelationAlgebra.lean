@@ -25,11 +25,13 @@ import RelationAlgebra.Automata.Minimal
 import RelationAlgebra.Automata.Thompson
 import RelationAlgebra.Decide.Term
 import RelationAlgebra.Decide.Antimirov
+import RelationAlgebra.Decide.Normalise
 import RelationAlgebra.Decide.KACompleteness
 import RelationAlgebra.Decide.Tactic
 import RelationAlgebra.Decide.GuardedString
 import RelationAlgebra.Decide.KATSound
 import RelationAlgebra.Decide.KATTactic
+import RelationAlgebra.Decide.RaTactic
 import RelationAlgebra.Examples.Basic
 import RelationAlgebra.Examples.Decide
 import RelationAlgebra.Examples.Models
