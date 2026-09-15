@@ -76,7 +76,7 @@ git = "https://github.com/focs-lab/lean-relational-algebra.git"
 rev = "ed50be231ce6b2699f91a98c19ada90c17b3b885"
 ```
 
-This pins the library to the code described here, including KA and untyped KAT completeness.
+This pins the library to a published revision with KA and untyped KAT completeness.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -197,6 +197,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Traces, guarded strings, setoid and finite relations | [Models/Trace](RelationAlgebra/Models/Trace.lean), [Models/SetoidRel](RelationAlgebra/Models/SetoidRel.lean), [Models/FinRel](RelationAlgebra/Models/FinRel.lean) |
 | Converse, relation algebra, residuals, allegories, vectors and points | [Converse](RelationAlgebra/Converse.lean), [Residuated](RelationAlgebra/Residuated.lean), [Allegory](RelationAlgebra/Allegory.lean), [Vectors](RelationAlgebra/Vectors.lean) |
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](RelationAlgebra/Typed.lean), [TypedKAT](RelationAlgebra/TypedKAT.lean) |
+| Typed expressions and guarded-string semantics | [TypedKAT/Syntax](RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](RelationAlgebra/TypedKAT/GuardedString.lean), [examples](RelationAlgebra/Examples/TypedSyntax.lean) |
 | Tactics, derivatives, and soundness proofs | [Decide](RelationAlgebra/Decide) |
 | Hoare hypotheses and the `hkat` tactic | [KAT/Hypotheses](RelationAlgebra/KAT/Hypotheses.lean), [Decide/HKATTactic](RelationAlgebra/Decide/HKATTactic.lean) |
 | Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
@@ -216,11 +217,12 @@ about what is proved and what is not.
 ## Next steps
 
 KA completeness and untyped KAT completeness are done, so `ka`, `kat` and `hkat` all work in
-arbitrary Kleene algebras. The priority is the **typed** KAT completeness theorem, which needs
-the typed free syntax of upstream's `gregex.v` and is what upstream's untyping theorem for KAT
-is derived from. Further work includes extending `ra` beyond the Kleene fragment and
-Paterson's flowchart equivalence. [PORTING.md](PORTING.md) has the dependency-ordered plan and an exact
-continuation point.
+arbitrary Kleene algebras. Typed expressions and their guarded-string semantics are now
+available: composition checks endpoints, tests have an interpretation at each object, and
+only endomorphisms can be iterated. The priority is **typed KAT completeness**, followed by
+algebraic untyping and typed tactic support. Further work includes extending `ra` beyond the
+Kleene fragment and Paterson's flowchart equivalence. [PORTING.md](PORTING.md) has the
+dependency-ordered plan and an exact continuation point.
 
 ## Credits and references
 

@@ -89,7 +89,7 @@ corresponding to `level.v`.
 | `srel.v` (setoid relations) | D,T | `Models/SetoidRel.lean` | **partial** | the *homogeneous* model `SetoidRel α` is complete (complete KA, relation algebra, KAT with tests the subsets of the quotient, `Relation.ReflTransGen` characterisation of the star).  Upstream's `srel n m` is **heterogeneous**, between two different setoids; that is not ported |
 | `fhrel.v` (finite relations) | D,T,A | `Models/FinRel.lean` | **partial** | `FinRel α β` is heterogeneous, and `FinRel.comp : FinRel α β → FinRel β γ → FinRel α γ` already gives heterogeneous composition, as do the Boolean-algebra and decidability instances.  What is missing is the **categorical layer around it**: associativity and identity laws for `comp` across different index types, its monotonicity and distribution over `+`, a heterogeneous converse, the `KleeneCategory` instance, and the isomorphism with `SetRel α β`.  The `Mul`/`One`/`KStar`/KAT instances, the computable transitive closure and the `SetRel` isomorphism exist only for `FinRel α α` |
 | `traces.v` (finite traces) | D,T | `Models/Trace.lean` | **partial** | untyped model done (complete KA + KAT + iso with `Language`); the *typed* trace model is not ported |
-| `glang.v` (guarded string languages) | D,T | `Models/Trace.lean`, `Decide/GuardedString.lean` | **partial** | the **untyped** model is done: `Models/Trace.lean` has the algebra and the transport of KAT structure along a bounded-lattice homomorphism, and `Decide/GuardedString.lean` the concrete development used by the `kat` checker.  Upstream also builds a **typed** guarded-string model (`glang.v`, section "Typed model"); that is not ported, for the same reason as the typed trace model |
+| `glang.v` (guarded string languages) | D,T | `Models/Trace.lean`, `Decide/GuardedString.lean`, `TypedKAT/GuardedString.lean` | **partial** | the untyped model is done. Typed languages now carry proofs of action-path typing and atom bounds, with union, fusion and iteration. Expression semantics and its correspondence with erasure are proved. A bundled `KleeneCategoryWithTests` instance for these typed languages is not yet provided |
 | `matrix.v` (typed matrices) | D,T | `Models/Matrix.lean`, `Models/MatrixExt.lean` | **partial** | square matrices, block star formula, uniqueness, complete-KA instance, computable star for `Fin n`, diagonal tests (KAT), and a `KleeneCategory` of rectangular matrices are all done; matrix **residuals** are not |
 | `matrix_ext.v` | T | `Models/MatrixExt.lean` | **partial** | the rectangular induction and bisimulation rules, block-triangular stars, the complete-KA instance, a computable star for `Fin n`, diagonal tests and a matrix `KleeneCategory`.  Upstream's `mx_scal`/`scal_mx` homomorphism lemmas are not ported |
 | `bmx.v` (Boolean matrices, rt-closure) | D,T | `Automata/ZeroOne.lean`, `Models/FinRel.lean` | **partial** | the characterisation is proved in the stronger form `Matrix.ofRel_kstar`: the star of a zero-one matrix over **any** Kleene algebra is the zero-one matrix of `Relation.ReflTransGen`.  Upstream's `bmx` type itself (square matrices over `bool` as a Kleene algebra) is not built; the closest object here is `FinRel α α` |
@@ -101,12 +101,12 @@ corresponding to `level.v`.
 
 | Upstream | Kinds | Lean counterpart | Status | Missing / notes |
 |---|---|---|---|---|
-| `syntax.v` (typed monoid syntax) | D,T | `Decide/Term.lean` (untyped only) | **partial** | no typed syntax, no level computation |
-| `lsyntax.v` (lattice syntax) | D,T | `Decide/GuardedString.lean` (`BTerm`) | **partial** | Boolean terms exist for the `kat` checker only |
+| `syntax.v` (typed monoid syntax) | D,T | `Decide/Term.lean`, `TypedKAT/Syntax.lean` | **partial** | typed syntax for the KA operations and tests is available; no typed converse/residual syntax or level computation |
+| `lsyntax.v` (lattice syntax) | D,T | `Decide/GuardedString.lean` (`BTerm`) | **partial** | Boolean terms are shared by the untyped checker and typed KAT syntax; no general lattice syntax |
 | `normalisation.v` | D,T,A,X | `Decide/Normalise.lean`, `Decide/RaTactic.lean` | **partial** | `ra`, `ra_normalise`, `ra_simpl` over the fragment `0, 1, +, *, ∗, converse`, with the correctness theorem `RaTerm.eval_norm` fully proved.  The normal form applies the structural laws (associativity, commutativity and idempotence of `+`, units and annihilation, distributivity, all converse laws, `0∗ = 1`, `1∗ = 1`, `a∗∗ = a∗`).  Not covered: `⊓`, `ᶜ`, `⊤`, residuals and strict iteration (reified as opaque atoms), upstream's partial containment check, and any canonicity proof.  As upstream, `ra` is sound but **incomplete** |
 | `rewriting.v` | X | — | **missing** | `mrewrite`: rewriting modulo associativity of composition |
 | `untyping.v` | T | — | **missing** | `erase_faithful_leq/weq`: types can be erased in the free models below KA with converse |
-| `kat_untyping.v` | T | — | **missing** | strong untyping for KAT, incl. merging predicate variables of distinct types |
+| `kat_untyping.v` | T | `TypedKAT/Syntax.lean`, `TypedKAT/GuardedString.lean` | **partial** | syntactic erasure and the exact language correspondence are proved, including preservation of action-path typing. The algebraic untyping theorem, which recovers equations in arbitrary typed KATs, still needs typed completeness |
 
 ---
 
@@ -120,9 +120,9 @@ corresponding to `level.v`.
 | `dfa.v` | D,T,A | `Automata/Det.lean`, `Automata/Lang.lean` | **partial** | `EpsNFA.IsDet`, the subset construction and the language of a deterministic automaton are done (D,T); the *executable* inclusion checker (A) is not — the `ka`/`kat` algorithms use derivatives instead |
 | `nfa.v` | D,T,A | `Automata/Defs.lean`, `Automata/Thompson.lean` | **partial** | matricial NFAs over a Kleene algebra, Thompson's construction, epsilon-elimination, and the value theorem are done (D,T); no executable NFA layer (A) |
 | `atoms.v` | D,T | `Decide/KATSound.lean` | **partial** | atoms of the free Boolean lattice, disjointness, join = `⊤`, decomposition — proved for the `kat` soundness argument |
-| `gregex.v` (typed KAT syntax) | D,T | — | **missing** | prerequisite for typed KAT completeness.  The typed *algebra* now exists (`TypedKAT.lean`); what is missing is the typed free syntax |
+| `gregex.v` (typed KAT syntax) | D,T | `TypedKAT/Syntax.lean`, `TypedKAT/GuardedString.lean` | **partial** | raw typed expressions, evaluation in arbitrary typed KATs, object renaming, erasure, and typed guarded-string semantics are implemented. Test valuations are independent at each object. Upstream's semantic equivalence/order and packaging as a free KAT model remain to be developed |
 | `ka_completeness.v` | T | `Decide/KACompleteness.lean` | **done** | `KleeneAlgebra.Term.completeness_eq`/`completeness_le`, for an arbitrary `[KleeneAlgebra K]` |
-| `kat_completeness.v` | T | `KATCompleteness/` (`RegLang`, `MapStar`, `AtomMatrix`, `Encode`, `LangCorrect`, `Recovery`, `Main`) | **partial** | the **untyped** statement is proved: `KAT.Completeness.KTerm.eval_eq_of_gs_eq` and its inequational form, for an arbitrary `[BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]`.  **Missing**: upstream's *typed* statement, which needs the typed free syntax of `gregex.v`, and the KAT untyping theorem upstream derives from it |
+| `kat_completeness.v` | T | `KATCompleteness/` (`RegLang`, `MapStar`, `AtomMatrix`, `Encode`, `LangCorrect`, `Recovery`, `Main`) | **partial** | the **untyped** statement is proved: `KAT.Completeness.KTerm.eval_eq_of_gs_eq` and its inequational form, for an arbitrary `[BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]`. **Missing**: upstream's typed completeness statement and algebraic KAT untyping. Raw typed syntax and its language semantics are now available; free-model infrastructure and the typed completeness proof remain |
 | `kat_reification.v` | D,A | `Decide/Tactic.lean`, `Decide/KATTactic.lean` | **partial** | reification is by `Expr` traversal rather than a reflected environment; no typed reification |
 | `kat_tac.v` (`ka`, `kat`, `hkat`) | X | `Decide/Tactic.lean` (`ka`), `Decide/KATTactic.lean` (`kat`), `Decide/HKATTactic.lean` (`hkat`) | **partial** | all three now work in an **arbitrary** Kleene algebra: `kat` and `hkat` synthesize `KleeneAlgebra`, not `CompleteKleeneAlgebra`.  Still untyped, and the search remains fuel-bounded |
 
@@ -189,9 +189,10 @@ DONE: bmx → automata (Thompson, eps-elim, determinisation, DFA languages, quot
         → KA completeness → `ka` for an arbitrary KleeneAlgebra
 DONE: Residuated, Allegory, Trace/glang, SetoidRel, FinRel, MatrixExt, imp
 DONE: untyped KAT completeness → `kat`/`hkat` for an arbitrary KleeneAlgebra
+DONE: raw typed KAT syntax → typed guarded-string semantics and language erasure
 
 REMAINING, in dependency order:
-  gregex (typed KAT syntax) ─→ typed KAT completeness ─→ kat_untyping (untyping for KAT)
+  typed free-model infrastructure ─→ typed KAT completeness ─→ algebraic KAT untyping
   untyping.v (for KA with converse) ─→ typed automation
   `ra` over the full lattice/residual syntax (the Kleene fragment is done)
   paterson (unblocked: `hkat` exists)
@@ -199,7 +200,7 @@ REMAINING, in dependency order:
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
   strict iteration `x⁺` and its induction rules (upstream `kleene.v`)
   heterogeneous models: `srel n m`, `fhrel A B` composition, `rel` with converse
-  typed trace and typed guarded-string models (upstream `traces.v`, `glang.v`)
+  typed trace model and bundled typed guarded-string model (upstream `traces.v`, `glang.v`)
   typed residuals and matrix residuals (upstream `monoid.v`, `matrix.v`)
   concrete assignment for IMP (upstream `imp.v`: `aff_stack`, `aff_comm`, `aff_ite`)
 ```
@@ -220,9 +221,10 @@ together with the inequational form `KTerm.eval_le_of_gs_subset` and the two ref
 completeness, star-continuity, commutativity or finiteness assumption is placed on `K` or `T`.
 `#print axioms` reports only `propext`, `Classical.choice`, `Quot.sound`.
 
-This is the **untyped** case.  Upstream proves the *typed* statement in `kat_completeness.v`
-(925 lines), which additionally requires the typed free syntax of `gregex.v`; that remains
-missing here, and with it the KAT untyping theorem that upstream derives from it.
+This is the **untyped** case. Upstream proves the typed statement in `kat_completeness.v`
+(925 lines). Raw typed syntax and language semantics are now in `TypedKAT/Syntax.lean` and
+`TypedKAT/GuardedString.lean`; the typed completeness proof and algebraic KAT untyping are
+still missing.
 
 #### Why the obvious reduction fails, and what fixes it
 
@@ -285,7 +287,8 @@ in each letter:
 | KA completeness | **met**: `KleeneAlgebra.Term.completeness_eq`; `#print axioms` reports only `propext, Classical.choice, Quot.sound` |
 | `ka` for arbitrary KA | **met**: `RelationAlgebra/Examples/Decide.lean` proves `(a+b)∗ = a∗*(b*a∗)∗` and seven other identities with only `[KleeneAlgebra K]` in scope |
 | KAT completeness (untyped) | **met**: `KAT.Completeness.KTerm.eval_eq_of_gs_eq`, with only `[BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]`; `RelationAlgebra/Examples/Decide.lean` closes `KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` by `kat` and `KAT.HoareTriple b p∗ b` from `KAT.HoareTriple b p b` by `hkat` over an abstract carrier; `#print axioms` reports only `propext, Classical.choice, Quot.sound` |
-| KAT completeness (typed) | not met: needs `gregex.v`, the typed free syntax |
+| Typed syntax and semantics | **met for the raw syntax milestone**: `TypedKAT.Term.eval`, `Term.lang`, `Term.strings_lang`, and `Term.pathTyped_of_mem_erase`; examples reject invalid composition and iteration and check heterogeneous relational evaluation. This does not package a free KAT model or prove typed completeness |
+| KAT completeness (typed) | not met: raw syntax and language semantics are available, but free-model infrastructure and the completeness proof remain |
 | `hkat` | **met for the tactic**: `RelationAlgebra/Decide/HKATTactic.lean` closes `⌜b⌝*p ≤ p*⌜b⌝ ⊢ ⌜b⌝*p∗ ≤ p∗*⌜b⌝`, which `kat` alone provably cannot (checked with `fail_if_success kat`), merges several hypotheses, and leaves other goals untouched.  Not met for Hardin–Kozen completeness, which is not formalised |
 | `ra`/`ra_normalise` | **met for the Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
 | `imp` | big-step semantics defined inductively, proved equal to the KAT denotation, and Hoare rules derived |
@@ -300,17 +303,20 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 
 Pick up here, in this order:
 
-1. **`gregex.v`, the typed free KAT syntax, and typed KAT completeness** — the untyped
-   statement is now proved (§8); upstream's typed one is not, and the KAT untyping theorem
-   depends on it.
+1. **Typed free-model infrastructure and typed KAT completeness** — raw typed expressions
+   and their semantics are implemented in `TypedKAT/Syntax.lean` and
+   `TypedKAT/GuardedString.lean`. `Term.strings_lang` identifies the erased language exactly,
+   but does not prove equality of interpretations in arbitrary typed KATs. Build the remaining
+   free-model infrastructure and prove that implication next; algebraic untyping depends on it.
 2. **`examples/paterson.v`** — large but self-contained, and unblocked now that `hkat` exists.
-3. **Untyping** (`untyping.v`, then `kat_untyping.v`) — needs the typed free syntax; upstream
-   derives KAT untyping *from* typed KAT completeness, so item 1 comes first.
+3. **Untyping** (`untyping.v`, then the algebraic part of `kat_untyping.v`) — language erasure
+   is now proved; upstream derives algebraic KAT untyping from typed KAT completeness,
+   so item 1 comes first.
 4. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
    extending `ra` to `⊓`, `ᶜ`, `⊤` and residuals rather than treating them as atoms.
 5. **The independent gaps listed at the end of §8**, none of which blocks anything else:
-   strict iteration, the heterogeneous models, the typed trace and guarded-string models, and
-   IMP's concrete assignment.
+   strict iteration, the heterogeneous models, the typed trace model and bundled guarded-string
+   model, and IMP's concrete assignment.
 
 ## 10. Session log
 
@@ -320,3 +326,4 @@ Pick up here, in this order:
 | 2026-09-15 | Inventory created.  **KA completeness proved** (`Automata/*` + `Decide/KACompleteness.lean`) and `ka` generalised to arbitrary Kleene algebras.  Also added: residuals, allegories, vectors/points/order predicates; trace and guarded-string-language models; setoid and finite relation models; matrix extensions (complete-KA instance, computable star for `Fin n`, diagonal tests, a `KleeneCategory` of rectangular matrices); **typed KAT** with the `SingleObj`/`End` round trip and the `RelCat` and matrix models; `hkat` with the Hardin–Kozen hypothesis lemmas; `ra`/`ra_normalise`/`ra_simpl` over the Kleene-with-converse fragment; and the IMP and compiler-optimisation applications.  Library grew from 4 053 to about 10 800 lines across 42 modules, 935 declarations and 129 regression examples; build green, zero warnings, no `sorry`/`admit`/new axioms, every headline theorem depending only on `propext`, `Classical.choice`, `Quot.sound`. |
 | 2026-09-15 (audit) | Corrected `hkat`'s handling of the local context; ported the six remaining compiler optimisations, so all twelve are proved; audited the "done" labels, demoting ten entries to **partial** with the missing functionality listed. |
 | 2026-09-15 (KAT completeness) | **Untyped KAT completeness proved** (`KATCompleteness/`): equal guarded-string semantics give equal values in an arbitrary `[BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]`, by reduction to the KA completeness theorem through a matrix of regular languages over the alphabet of atom-action-atom triples.  `kat` and `hkat` now synthesize `KleeneAlgebra` instead of `CompleteKleeneAlgebra`, with abstract-carrier regressions.  Build green, no `sorry`/`admit`/new axioms/`native_decide`. |
+| 2026-09-15 (typed syntax) | Added `TypedKAT/Syntax.lean` and `TypedKAT/GuardedString.lean`: expressions with enforced endpoints, evaluation in arbitrary typed KATs, object renaming, bounded typed languages, and exact language erasure. Added 18 examples covering heterogeneous relations, distinct test valuations, invalid constructions, and language certificates. The correspondence theorems use only `propext`, `Classical.choice`, and `Quot.sound`. Typed completeness and algebraic untyping remain open. |

@@ -11,6 +11,8 @@ import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedKAT
+import RelationAlgebra.TypedKAT.Syntax
+import RelationAlgebra.TypedKAT.GuardedString
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
@@ -47,3 +49,4 @@ import RelationAlgebra.Examples.Imp
 import RelationAlgebra.Examples.Models
 import RelationAlgebra.Examples.Coherence
 import RelationAlgebra.Examples.CompilerOpts
+import RelationAlgebra.Examples.TypedSyntax
