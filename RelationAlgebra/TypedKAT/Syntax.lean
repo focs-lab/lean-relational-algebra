@@ -18,7 +18,8 @@ and an explicit identity constructor, rather than upstream's strict iteration.
 `Term.eval` interprets expressions in any `KleeneCategoryWithTests`, with an arbitrary map
 from syntactic objects to semantic objects. `Term.erase` forgets the object indices and
 produces the existing untyped `KAT.KTerm`. Defining erasure does not assert the algebraic
-untyping theorem: recovering typed equations from erased equations needs typed completeness.
+untyping theorem. Typed completeness and reflection are proved separately in
+`RelationAlgebra.TypedKATCompleteness.Main`.
 -/
 
 open CategoryTheory

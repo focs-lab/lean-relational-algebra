@@ -15,7 +15,8 @@ fusion: the final atom of the first string must equal the initial atom of the se
 `Term.strings_lang` proves that forgetting the typing proofs gives exactly the existing
 guarded-string semantics of the erased expression. This is a statement about languages,
 not an algebraic untyping or completeness theorem. It gives a bridge to the existing
-derivative checker without assuming its soundness in arbitrary typed KATs.
+derivative checker. `RelationAlgebra.TypedKATCompleteness.Main` supplies the separate
+completeness proof and reflection lemmas for arbitrary typed KATs.
 
 This development follows the typed syntax and guarded-string semantics of Damien Pous's
 [`relation-algebra`](https://github.com/damien-pous/relation-algebra) (`theories/gregex.v`,
@@ -193,7 +194,7 @@ theorem pathTyped_of_mem_erase {e : Term src tgt X Y} {k : ℕ} {g : KAT.GStr}
   (e.lang k).pathTyped g (by simpa only [strings_lang] using h)
 
 /-- Equality of typed languages is equivalent to equality after forgetting typing proofs.
-This does not yet connect either equality to evaluation in arbitrary typed KATs. -/
+The connection to arbitrary typed KATs is proved in `TypedKATCompleteness/Main.lean`. -/
 theorem lang_eq_iff (e f : Term src tgt X Y) (k : ℕ) :
     e.lang k = f.lang k ↔ e.erase.gs k = f.erase.gs k := by
   constructor
@@ -203,8 +204,8 @@ theorem lang_eq_iff (e f : Term src tgt X Y) (k : ℕ) :
     apply Language.ext
     simpa only [strings_lang] using h
 
-/-- A successful untyped certificate establishes equality of the typed *languages*. The
-additional step to an equation in an arbitrary typed KAT requires typed completeness. -/
+/-- A successful untyped certificate establishes equality of the typed *languages*.
+`TypedKAT.Completeness.eval_eq_of_decideEq` supplies the step to arbitrary typed KATs. -/
 theorem lang_eq_of_decideEq {e f : Term src tgt X Y} {k fuel : ℕ}
     (h : KAT.KTerm.decideEq k e.erase f.erase fuel = true) : e.lang k = f.lang k :=
   (lang_eq_iff e f k).2 (KAT.KTerm.gs_eq_of_decideEq h)

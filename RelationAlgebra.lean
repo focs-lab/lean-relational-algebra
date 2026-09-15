@@ -40,6 +40,10 @@ import RelationAlgebra.KATCompleteness.Encode
 import RelationAlgebra.KATCompleteness.LangCorrect
 import RelationAlgebra.KATCompleteness.Recovery
 import RelationAlgebra.KATCompleteness.Main
+import RelationAlgebra.TypedKATCompleteness.Matrix
+import RelationAlgebra.TypedKATCompleteness.Finite
+import RelationAlgebra.TypedKATCompleteness.Support
+import RelationAlgebra.TypedKATCompleteness.Main
 import RelationAlgebra.Decide.KATTactic
 import RelationAlgebra.Decide.HKATTactic
 import RelationAlgebra.Decide.RaTactic
@@ -50,3 +54,4 @@ import RelationAlgebra.Examples.Models
 import RelationAlgebra.Examples.Coherence
 import RelationAlgebra.Examples.CompilerOpts
 import RelationAlgebra.Examples.TypedSyntax
+import RelationAlgebra.Examples.TypedCompleteness
