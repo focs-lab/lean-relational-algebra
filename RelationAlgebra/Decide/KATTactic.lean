@@ -1,16 +1,16 @@
-import RelationAlgebra.Decide.KATSound
+import RelationAlgebra.KATCompleteness.Main
 import RelationAlgebra.KAT.Hoare
 import RelationAlgebra.Models.Bool
 
 /-!
 # The `kat` tactic
 
-`kat` closes goals `a = b` or `a ≤ b` in a *complete* Kleene algebra with tests (e.g. relations
-`SetRel α α` with tests `Set α`, after `open scoped SetRel`; or any complete Kleene algebra with
-the trivial tests `Bool`) that are valid in all KATs: the two sides are reified into
+`kat` closes goals `a = b` or `a ≤ b` in an *arbitrary* Kleene algebra with tests (e.g.
+relations `SetRel α α` with tests `Set α`, after `open scoped SetRel`; or any Kleene algebra
+with the trivial tests `Bool`) that are valid in all KATs: the two sides are reified into
 `KAT.KTerm`s (tests being reified into Boolean terms `KAT.BTerm`), their guarded-string
 semantics are compared by `KAT.KTerm.decideEq` (kernel-evaluated), and
-`KAT.KTerm.eval_eq_of_decideEq` turns the certificate into the goal.
+`KAT.Completeness.eval_eq_of_decideEq` turns the certificate into the goal.
 
 Guarded commands `KAT.ifThenElse`, `KAT.whileDo` and Hoare triples `KAT.HoareTriple` are
 unfolded first, so `kat` proves e.g. `KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ` directly.  The
@@ -119,15 +119,14 @@ def katCore (fuel : ℕ) : TacticM Unit := focus do
       | _ => throwError "kat: the goal must be an equality or an inequality"
     let some v := (← getLevel K).dec
       | throwError "kat: unexpected universe level for {K}"
-    let instCKA ← try synthInstance (mkApp (mkConst ``CompleteKleeneAlgebra [v]) K)
+    let instKA ← try synthInstance (mkApp (mkConst ``KleeneAlgebra [v]) K)
       catch _ => throwError
-        "kat: {K} is not a complete Kleene algebra (`CompleteKleeneAlgebra {K}` not found)"
+        "kat: {K} is not a Kleene algebra (`KleeneAlgebra {K}` not found)"
     let T := (findTestType lhs).getD ((findTestType rhs).getD (mkConst ``Bool))
     let some u := (← getLevel T).dec
       | throwError "kat: unexpected universe level for {T}"
     let instBA ← try synthInstance (mkApp (mkConst ``BooleanAlgebra [u]) T)
       catch _ => throwError "kat: {T} is not a Boolean algebra"
-    let instKA := mkApp2 (mkConst ``CompleteKleeneAlgebra.toKleeneAlgebra [v]) K instCKA
     let katType := mkAppN (mkConst ``KleeneAlgebraWithTests [u, v]) #[T, K, instBA, instKA]
     let instKAT ← try synthInstance katType
       catch _ => throwError "kat: no `KleeneAlgebraWithTests {T} {K}` instance found"
@@ -158,18 +157,18 @@ def katCore (fuel : ℕ) : TacticM Unit := focus do
       throwError "kat: the goal is not a valid KAT (in)equation, or the fuel ({fuel}) ran out\
         \n(tests: {st.tests}, actions: {st.acts})"
     let h ← mkExpectedTypeHint reflTrue (boolEq prop)
-    let thmName := if isLe then ``KAT.KTerm.eval_le_of_decideLe
-      else ``KAT.KTerm.eval_eq_of_decideEq
+    let thmName := if isLe then ``KAT.Completeness.eval_le_of_decideLe
+      else ``KAT.Completeness.eval_eq_of_decideEq
     let pf := mkAppN (mkConst thmName [u, v])
-      #[T, K, instBA, instCKA, instKAT, τ, ρ, kE, te, tf, fuelE, he, hf, h]
+      #[T, K, instBA, instKA, instKAT, τ, ρ, kE, te, tf, fuelE, he, hf, h]
     let pfType ← inferType pf
     unless ← isDefEq pfType goalType do
       throwError "kat: failed to reify the goal{indentExpr goalType}\nas{indentExpr pfType}"
     goal.assign pf
 
-/-- `kat` decides equalities and inequalities of complete Kleene algebras with tests that are
-valid in all KATs, by reflection into guarded-string automata.  `kat n` uses `n` units of
-fuel (default `1000`). -/
+/-- `kat` decides equalities and inequalities that hold in every Kleene algebra with tests, by
+reflection into guarded-string automata.  The carrier only has to be a `KleeneAlgebra`.
+`kat n` uses `n` units of fuel (default `1000`). -/
 syntax (name := kat) "kat" (ppSpace num)? : tactic
 
 elab_rules : tactic

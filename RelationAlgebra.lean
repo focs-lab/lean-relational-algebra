@@ -30,6 +30,13 @@ import RelationAlgebra.Decide.KACompleteness
 import RelationAlgebra.Decide.Tactic
 import RelationAlgebra.Decide.GuardedString
 import RelationAlgebra.Decide.KATSound
+import RelationAlgebra.KATCompleteness.RegLang
+import RelationAlgebra.KATCompleteness.MapStar
+import RelationAlgebra.KATCompleteness.AtomMatrix
+import RelationAlgebra.KATCompleteness.Encode
+import RelationAlgebra.KATCompleteness.LangCorrect
+import RelationAlgebra.KATCompleteness.Recovery
+import RelationAlgebra.KATCompleteness.Main
 import RelationAlgebra.Decide.KATTactic
 import RelationAlgebra.Decide.RaTactic
 import RelationAlgebra.Examples.Basic

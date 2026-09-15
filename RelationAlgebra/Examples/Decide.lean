@@ -125,6 +125,53 @@ example (R : SetRel ℕ ℕ) : R = R ∧ True := by
 
 end KATRelations
 
+section KATAbstract
+
+/-! ### `kat` in an *arbitrary* Kleene algebra with tests
+
+Since `KAT.Completeness.eval_eq_of_decideEq`, the tactic no longer needs the carrier to be a
+complete Kleene algebra: an arbitrary `KleeneAlgebra` carrying a `KleeneAlgebraWithTests`
+instance is enough, and the test algebra is an arbitrary `BooleanAlgebra`. -/
+
+open scoped Computability KAT
+
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b : T) (p : K) : KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ := by kat
+
+/-- An inequality in an abstract KAT. -/
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b c : T) (p : K) : ⌜b⌝ * p ≤ p + ⌜c⌝ := by kat
+
+/-- `\` and `⇨` are normalised before reification, in an abstract KAT too. -/
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b c : T) (p : K) : ⌜b \ c⌝ * p = ⌜b⌝ * ⌜cᶜ⌝ * p := by kat
+
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (b c : T) :
+    (⌜b ⇨ c⌝ : K) = ⌜bᶜ⌝ + ⌜c⌝ := by kat
+
+/-- Loop unrolling, with the guard an abstract test. -/
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (b : T) (p : K) :
+    KAT.whileDo b p = KAT.ifThenElse b (p * KAT.whileDo b p) 1 := by kat
+
+-- Several goals: `kat` acts on the main goal only.
+set_option linter.style.multiGoal false in
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (b : T) (p : K) :
+    ⌜b⌝ * p = ⌜b⌝ * ⌜b⌝ * p ∧ True := by
+  constructor
+  kat
+  trivial
+
+-- Invalid identities are rejected, not proved.
+set_option linter.unusedVariables false in
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (p q : K) (b : T) :
+    True := by
+  fail_if_success (have : p * q = q * p := by kat)
+  fail_if_success (have : p ≤ q := by kat)
+  fail_if_success (have : (⌜b⌝ : K) = 1 := by kat)
+  trivial
+
+end KATAbstract
+
 section KATLanguages
 
 open scoped KAT
