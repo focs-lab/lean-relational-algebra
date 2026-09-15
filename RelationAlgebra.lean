@@ -43,5 +43,7 @@ import RelationAlgebra.Decide.HKATTactic
 import RelationAlgebra.Decide.RaTactic
 import RelationAlgebra.Examples.Basic
 import RelationAlgebra.Examples.Decide
+import RelationAlgebra.Examples.Imp
 import RelationAlgebra.Examples.Models
 import RelationAlgebra.Examples.Coherence
+import RelationAlgebra.Examples.CompilerOpts
