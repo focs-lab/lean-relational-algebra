@@ -1,5 +1,6 @@
 import RelationAlgebra.Decide.Tactic
 import RelationAlgebra.Decide.KATTactic
+import RelationAlgebra.Decide.HKATTactic
 
 /-!
 # Examples for the `ka` and `kat` tactics
@@ -127,9 +128,9 @@ end KATRelations
 
 section KATAbstract
 
-/-! ### `kat` in an *arbitrary* Kleene algebra with tests
+/-! ### `kat` and `hkat` in an *arbitrary* Kleene algebra with tests
 
-Since `KAT.Completeness.eval_eq_of_decideEq`, the tactic no longer needs the carrier to be a
+Since `KAT.Completeness.eval_eq_of_decideEq`, the two tactics no longer need the carrier to be a
 complete Kleene algebra: an arbitrary `KleeneAlgebra` carrying a `KleeneAlgebraWithTests`
 instance is enough, and the test algebra is an arbitrary `BooleanAlgebra`. -/
 
@@ -137,6 +138,9 @@ open scoped Computability KAT
 
 example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
     (b : T) (p : K) : KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ := by kat
+
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b : T) (p : K) (h : KAT.HoareTriple b p b) : KAT.HoareTriple b p∗ b := by hkat
 
 /-- An inequality in an abstract KAT. -/
 example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
@@ -152,6 +156,10 @@ example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (b c : T) :
 /-- Loop unrolling, with the guard an abstract test. -/
 example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] (b : T) (p : K) :
     KAT.whileDo b p = KAT.ifThenElse b (p * KAT.whileDo b p) 1 := by kat
+
+/-- Binders introduced by the tactic itself, over an abstract carrier. -/
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K] :
+    ∀ p q : K, p ≤ 0 → q ≤ 0 → p + q = 0 := by hkat
 
 -- Several goals: `kat` acts on the main goal only.
 set_option linter.style.multiGoal false in

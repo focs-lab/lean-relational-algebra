@@ -4,6 +4,7 @@ import RelationAlgebra.Kleene.Complete
 import RelationAlgebra.KAT.Defs
 import RelationAlgebra.KAT.Basic
 import RelationAlgebra.KAT.Hoare
+import RelationAlgebra.KAT.Hypotheses
 import RelationAlgebra.Converse
 import RelationAlgebra.Residuated
 import RelationAlgebra.Allegory
@@ -38,6 +39,7 @@ import RelationAlgebra.KATCompleteness.LangCorrect
 import RelationAlgebra.KATCompleteness.Recovery
 import RelationAlgebra.KATCompleteness.Main
 import RelationAlgebra.Decide.KATTactic
+import RelationAlgebra.Decide.HKATTactic
 import RelationAlgebra.Decide.RaTactic
 import RelationAlgebra.Examples.Basic
 import RelationAlgebra.Examples.Decide
