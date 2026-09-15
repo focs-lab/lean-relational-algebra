@@ -9,10 +9,12 @@ import RelationAlgebra.Residuated
 import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
+import RelationAlgebra.TypedKAT
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.Matrix
+import RelationAlgebra.Models.MatrixExt
 import RelationAlgebra.Models.SetoidRel
 import RelationAlgebra.Models.FinRel
 import RelationAlgebra.Automata.ZeroOne
@@ -30,3 +32,5 @@ import RelationAlgebra.Decide.KATSound
 import RelationAlgebra.Decide.KATTactic
 import RelationAlgebra.Examples.Basic
 import RelationAlgebra.Examples.Decide
+import RelationAlgebra.Examples.Models
+import RelationAlgebra.Examples.Coherence
