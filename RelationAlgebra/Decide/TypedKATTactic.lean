@@ -29,7 +29,7 @@ private inductive Tree where
   | star (body : Tree)
 
 /-- A primitive morphism and its object indices. -/
-private structure Action where
+structure Action where
   source : ℕ
   target : ℕ
   value : Expr
@@ -40,6 +40,7 @@ private structure State where
   tests : Array (Array Expr) := #[]
   actions : Array Action := #[]
   testFamily : Option Expr := none
+  collectActionsOnly : Bool := false
 
 private abbrev ReifyM := StateRefT State MetaM
 
@@ -63,6 +64,8 @@ private def addAction (e : Expr) (source target : ℕ) : ReifyM Tree := do
 
 private def reifyTest (object : ℕ) (family body : Expr) : ReifyM Tree := do
   let s ← get
+  -- Universal paths ignore guards; no Boolean environment is needed in collection mode.
+  if s.collectActionsOnly then return .one object
   if let some T := s.testFamily then
     unless ← withReducible (isDefEq T family) do
       throwError "kat: typed tests must belong to one test family over the category"
@@ -85,6 +88,15 @@ private partial def reify (source target : ℕ) (e : Expr) : ReifyM Tree := do
   | (``KStar.kstar, #[_, _, a]) => return .star (← reify source target a)
   | (``KleeneCategoryWithTests.test, #[_, _, _, T, _, _, _, b]) => reifyTest source T b
   | _ => addAction e source target
+
+/-- Collect the objects and primitive actions of expressions with their expected endpoints.
+This shares `kat`'s atom recognition with the typed hypothesis-elimination tactic. -/
+def actionGraph (terms : Array (Expr × Expr × Expr)) : MetaM (Array Expr × Array Action) := do
+  let (_, s) ← (terms.forM fun (X, Y, e) => do
+    let source ← addObject X
+    let target ← addObject Y
+    let _ ← reify source target e).run { collectActionsOnly := true }
+  return (s.objects, s.actions)
 
 /-- Build the indexed syntax after all action endpoints have been collected. -/
 private def Tree.toExpr (src tgt : Expr) : Tree → MetaM Expr

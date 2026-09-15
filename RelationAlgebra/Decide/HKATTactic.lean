@@ -1,15 +1,18 @@
 import RelationAlgebra.Decide.KATTactic
+import RelationAlgebra.Decide.HKATCommon
+import RelationAlgebra.Decide.TypedHKATTactic
 import RelationAlgebra.KAT.Hypotheses
 
 /-!
 # The `hkat` tactic
 
 `hkat` closes goals `a = b`, `a ≤ b` and `KAT.HoareTriple b p c` in an *arbitrary* Kleene algebra
-with tests **using the hypotheses of the local context**, following Hardin and Kozen's
+with tests, and their typed categorical counterparts, **using the hypotheses of the local
+context**, following Hardin and Kozen's
 elimination of Hoare hypotheses.  It is the counterpart of the `hkat` tactic of
 `theories/kat_tac.v` in Damien Pous' `relation-algebra` library for Rocq/Coq.
 
-## What it does
+## Untyped goals
 
 1. `intros`, then unfold `KAT.ifThenElse`, `KAT.whileDo`, `KAT.HoareTriple`, `\` and `⇨` in the
    goal, exactly as `kat` does.  If this closes the goal, `hkat` stops.
@@ -39,6 +42,20 @@ elimination of Hoare hypotheses.  It is the counterpart of the `hkat` tactic of
    `KAT.hoare_elim_le` with `u` for both `u` and `v`, and discharge the remaining
    hypothesis-free goal with `kat`.
 
+## Typed goals
+
+For categorical goals, `hkat` uses the corresponding conversion lemmas in
+`TypedKAT/Hypotheses.lean`. Tests at the source and target may belong to different Boolean
+algebras in the same test family. The supported shapes above use `⌞b⌟`, `≫`, `⊔`, and `⊥`
+in place of their untyped counterparts; the two special rewriting rules are endomorphism
+rules. Commands and Boolean connectives are normalized in the hypotheses as well.
+
+Instead of joining hypotheses from incompatible hom-sets, it builds path expressions from
+the finite graph of actions in the goal and the converted hypotheses. For a goal in
+`X ⟶ Y`, a zero hypothesis `z : A ⟶ B` contributes `U X A ≫ z ≫ U B Y`, proved zero by
+`TypedKAT.context_le_bot`. These contributions can be joined in `X ⟶ Y`; typed `kat`
+checks the resulting unconditional equality or inequality. See `Decide/TypedHKATTactic.lean`.
+
 `hkat n` passes `n` units of fuel to `kat` (default `1000`).  `hkat` acts on the main goal
 only; the other goals are left untouched.
 
@@ -46,9 +63,12 @@ only; the other goals are left untouched.
 
 * `hkat` inherits the requirements of `kat`: the carrier must be a `KleeneAlgebra`
   (this is checked, with a dedicated error message) carrying a `KleeneAlgebraWithTests`
-  instance, and the search is fuel-bounded.
+  instance. Typed goals instead need `[Category C] [KleeneCategory C]` and, when tests
+  occur, a single `[TypedKAT C T]` test family with `[∀ X, BooleanAlgebra (T X)]`.
+  Search is fuel-bounded; typed path construction can make the checked expressions larger.
 * Step 4 is *sound* — that is all that is used here, see `RelationAlgebra.KAT.Hypotheses`.  Its
-  *completeness* is the Hardin–Kozen theorem, which is **not** formalised in this development:
+  *completeness* is the Hardin–Kozen theorem, which is **not** formalised in this development.
+  Completeness of the typed path construction is also not proved:
   a failure of `hkat` establishes nothing about the goal.
 * If no hypothesis can be used at all, `hkat` fails with an error rather than silently
   behaving like `kat`.  (If step 2 rewrote the goal but produced no Hoare hypothesis, `hkat`
@@ -59,7 +79,7 @@ only; the other goals are left untouched.
 * [C. Hardin and D. Kozen, *On the elimination of hypotheses in Kleene algebra with tests*,
   TR2002-1879, Computer Science Department, Cornell University, October 2002][hardinkozen2002]
 * `theories/kat_tac.v` of [`relation-algebra`](https://github.com/damien-pous/relation-algebra)
-  by Damien Pous, which this tactic follows step by step.
+  by Damien Pous, whose hypothesis conversions and untyped elimination this tactic ports.
 -/
 
 open Lean Meta Elab Tactic
@@ -78,46 +98,12 @@ as its last argument. -/
 def rewriteConversions : Array Name :=
   #[``KAT.test_mul_eq_to_hoare, ``KAT.mul_test_eq_to_hoare]
 
-/-- Apply the conversion lemma `lem` to the fact `h`, which is used as the last argument of
-`lem`; all the other arguments are inferred, instance arguments being synthesised.  The
-conclusion of `lem` must be an equation or an inequation in the carrier `K`.  Returns `none`
-if the lemma does not apply. -/
-def tryConversion (lem : Name) (K : Expr) (h : Expr) : MetaM (Option Expr) :=
-  observing? do
-    let info ← getConstInfo lem
-    let lvls ← info.levelParams.mapM fun _ ↦ mkFreshLevelMVar
-    let f := mkConst lem lvls
-    let (args, bis, concl) ← forallMetaTelescope (← inferType f)
-    unless 0 < args.size do throwError "no argument"
-    let last := args[args.size - 1]!
-    unless ← isDefEq last h do throwError "the hypothesis does not fit"
-    let carrier ← match (← whnfR concl).getAppFnArgs with
-      | (``Eq, #[α, _, _]) => pure α
-      | (``LE.le, #[α, _, _, _]) => pure α
-      | _ => throwError "unexpected conclusion"
-    unless ← isDefEq carrier K do throwError "the conclusion is about another carrier"
-    for i in [:args.size] do
-      if bis[i]!.isInstImplicit && !(← args[i]!.mvarId!.isAssigned) then
-        let inst ← synthInstance (← instantiateMVars (← inferType args[i]!))
-        unless ← isDefEq args[i]! inst do throwError "instance mismatch"
-    let e ← instantiateMVars (mkAppN f args)
-    if e.hasExprMVar || e.hasLevelMVar then throwError "underdetermined"
-    return e
-
 /-- Try every lemma of `hoareConversions` on the fact `h`, and return the first Hoare
 hypothesis obtained, if any. -/
 def toHoare (K : Expr) (h : Expr) : MetaM (Option Expr) := do
   for lem in hoareConversions do
     if let some e ← tryConversion lem K h then return some e
   return none
-
-/-- The proofs in the local context that `hkat` may use. -/
-def localFacts : TacticM (Array LocalDecl) := withMainContext do
-  let mut res := #[]
-  for decl in ← getLCtx do
-    if decl.isImplementationDetail then continue
-    if ← isProp decl.type then res := res.push decl
-  return res
 
 /-- Use the hypotheses of the shape `⌜c⌝ * p = ⌜c⌝` and `p * ⌜c⌝ = ⌜c⌝` as rewriting rules in
 the goal.  Returns the hypotheses that were used this way; they are not used again as Hoare
@@ -172,7 +158,7 @@ def universalExpr (K : Expr) (es : Array Expr) : MetaM Expr := do
 def hkatCore (fuel : ℕ) : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
   evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple,
-    sdiff_eq, himp_eq]))
+    TypedKAT.ifThenElse, TypedKAT.whileDo, TypedKAT.HoareTriple, sdiff_eq, himp_eq]))
   -- only the original goal is in scope here (`focus`); the preprocessing may have closed it
   if (← getGoals).isEmpty then return
   -- Everything below reads the goal's local context, which `intros` has just extended, so it
@@ -182,13 +168,17 @@ def hkatCore (fuel : ℕ) : TacticM Unit := focus do
       | (``Eq, #[K, _, _]) => pure K
       | (``LE.le, #[K, _, _, _]) => pure K
       | _ => throwError "hkat: the goal must be an equality or an inequality"
+    pure K
+  if let some hom ← withMainContext (TypedKAT.Tactic.homType? K) then
+    TypedKAT.Tactic.hkatCore hom fuel
+    return
+  withMainContext do
     let some v := (← getLevel K).dec
       | throwError "hkat: unexpected universe level for {K}"
     try
       let _ ← synthInstance (mkApp (mkConst ``KleeneAlgebra [v]) K)
     catch _ =>
       throwError "hkat: {K} is not a Kleene algebra (`KleeneAlgebra {K}` not found)"
-    pure K
   let facts ← localFacts
   let rewritten ← rewriteHyps K facts
   let hyps ← collectHoareHyps K facts rewritten
@@ -216,8 +206,9 @@ def hkatCore (fuel : ℕ) : TacticM Unit := focus do
       replaceMainGoal goals
   katCore fuel
 
-/-- `hkat` proves equalities, inequalities and Hoare triples of arbitrary Kleene algebras with
-tests *under the hypotheses of the local context*, by eliminating Hoare hypotheses à la
+/-- `hkat` proves equalities, inequalities and Hoare triples in arbitrary untyped or typed
+Kleene algebras with tests *under the hypotheses of the local context*, by eliminating Hoare
+hypotheses à la
 Hardin–Kozen and calling `kat`.  `hkat n` uses `n` units of fuel (default `1000`). -/
 syntax (name := hkat) "hkat" (ppSpace num)? : tactic
 
