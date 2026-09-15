@@ -4,11 +4,14 @@ import RelationAlgebra.Kleene.Complete
 import RelationAlgebra.KAT.Defs
 import RelationAlgebra.KAT.Basic
 import RelationAlgebra.KAT.Hoare
+import RelationAlgebra.Converse
+import RelationAlgebra.Residuated
+import RelationAlgebra.Allegory
+import RelationAlgebra.Vectors
+import RelationAlgebra.Typed
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Matrix
-import RelationAlgebra.Converse
-import RelationAlgebra.Typed
 import RelationAlgebra.Decide.Term
 import RelationAlgebra.Decide.Antimirov
 import RelationAlgebra.Decide.Tactic
