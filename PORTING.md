@@ -124,7 +124,7 @@ corresponding to `level.v`.
 | `ka_completeness.v` | T | `Decide/KACompleteness.lean` | **done** | `KleeneAlgebra.Term.completeness_eq`/`completeness_le`, for an arbitrary `[KleeneAlgebra K]` |
 | `kat_completeness.v` | T | `KATCompleteness/`, `TypedKATCompleteness/` | **done for completeness** | equality and inclusion completeness are proved in both untyped and typed KATs. The typed theorem is `TypedKAT.Completeness.eval_eq_of_lang_eq`, with arbitrary object alphabets, categories, and test algebras; `eval_le_of_lang_subset` and both reflection lemmas accompany it. Upstream packages these statements through its free-model structure; that packaging remains tracked under `gregex.v` |
 | `kat_reification.v` | D,A | `Decide/KATReify.lean`, `Decide/TypedKATTactic.lean`, `Decide/TypedKATEnvironment.lean` | **done for KAT goals** | `kat` traverses `Expr`, reifies typed or untyped syntax, and builds valuations that evaluate definitionally to the goal. Typed actions carry endpoints and tests have separate environments at each object. The kernel checks proofs reconstructed through completeness |
-| `kat_tac.v` (`ka`, `kat`, `hkat`) | X | `Decide/Tactic.lean` (`ka`), `Decide/KATTactic.lean` (`kat`), `Decide/HKATTactic.lean` (`hkat`) | **partial** | all three now work in an **arbitrary** Kleene algebra: `kat` and `hkat` synthesize `KleeneAlgebra`, not `CompleteKleeneAlgebra`.  `kat` also reifies typed categorical goals; typed `ka`/`hkat` interfaces remain missing. Search remains fuel-bounded |
+| `kat_tac.v` (`ka`, `kat`, `hkat`) | X | `Decide/Tactic.lean` (`ka`), `Decide/KATTactic.lean` (`kat`), `Decide/HKATTactic.lean` (`hkat`) | **partial** | all three now work in an **arbitrary** Kleene algebra: `kat` and `hkat` synthesize `KleeneAlgebra`, not `CompleteKleeneAlgebra`.  `kat` and `hkat` also support typed categorical goals; the typed `ka` interface remains missing. Search remains fuel-bounded |
 
 ### Precise statement of the current tactic guarantees
 
@@ -139,8 +139,8 @@ This distinction matters and is easy to blur:
 3. **Algebraic completeness.** Proved for KA (`KleeneAlgebra.Term.completeness_eq`), untyped
    KAT (`KAT.Completeness.KTerm.eval_eq_of_gs_eq`), and typed KAT
    (`TypedKAT.Completeness.eval_eq_of_lang_eq`). The typed reflection lemmas can be applied
-   to explicit expressions and are used by the typed branch of `kat`. `ka` and `hkat` still
-   target untyped goals. None of these completeness results assumes complete hom lattices,
+   to explicit expressions and are used by the typed branches of `kat` and `hkat`. `ka` still
+   targets untyped goals. None of these completeness results assumes complete hom lattices,
    star-continuity or finite carriers.
 4. **Termination and resource bounds.** The checkers terminate by construction (structural
    recursion on the fuel).  No bound relating fuel to term size is proved; upstream likewise
@@ -194,9 +194,9 @@ DONE: raw typed KAT syntax → typed guarded-string semantics and language erasu
 DONE: finite morphism matrices + finite support → typed KAT completeness and reflection
 DONE: dependent valuations + categorical reification → typed `kat`
 DONE: finite matrix recovery + finite support → algebraic KAT untyping interface
+DONE: typed Hoare conversions + action paths → typed `hkat`
 
 REMAINING, in dependency order:
-  typed hypothesis handling (`hkat`)
   free-model packaging for typed syntax and guarded-string languages
   untyping.v (for KA with converse)
   `ra` over the full lattice/residual syntax (the Kleene fragment is done)
@@ -228,8 +228,12 @@ completeness, star-continuity, commutativity or finiteness assumption is placed 
 
 This is the untyped case. Typed completeness is also proved, in
 `TypedKATCompleteness/Main.lean`; its construction is described below. The general algebraic
-untyping interface is in `TypedKAT/Untyping.lean`, and typed `kat` is available. Typed
-hypothesis handling remains pending.
+untyping interface is in `TypedKAT/Untyping.lean`. Both `kat` and `hkat` support typed goals.
+Typed `hkat` uses the zero-conversion lemmas in `TypedKAT/Hypotheses.lean` and constructs
+paths from the finite action graph: a zero hypothesis `z : A ⟶ B` contributes
+`U X A ≫ z ≫ U B Y` to a goal in `X ⟶ Y`. Each contribution is proved zero, and typed
+`kat` checks the augmented equation. This proves soundness; completeness of the path
+construction and Hardin–Kozen elimination remains unformalised.
 
 #### Why the obvious reduction fails, and what fixes it
 
@@ -346,6 +350,7 @@ is imposed on the caller. Equality in one particular model is not a sufficient p
 | KAT completeness (typed) | **met**: `TypedKAT.Completeness.eval_eq_of_lang_eq` and `eval_le_of_lang_subset`, with no finite-object or continuity assumptions. `Examples/TypedCompleteness.lean` checks equality, inequality, loops, independent test valuations, object identifications, negative certificates, and the necessary variable bounds |
 | Algebraic KAT untyping | **met for evaluation transport**: both equality and inequality interfaces are proved without atom bounds or fuel. `Examples/Untyping.lean` covers independent tests, object identifications, arbitrary test indices, infinite higher-universe object alphabets, concrete relations, and rejection of a single-interpretation premise |
 | Typed `kat` | **met**: `Examples/TypedDecide.lean` proves heterogeneous sliding, test identities, guarded inequalities, conditionals, and loops through `kat`, with abstract categories and concrete relations. Regressions also cover binders, multiple goals, insufficient fuel, and invalid identities |
+| Typed `hkat` | **met for the tactic**: `Examples/TypedHypotheses.lean` covers heterogeneous sequencing, loops, Boolean and guarded constraints, endomorphism rewrites, concrete relation constructors, binders, multiple goals, and invalid consequences. Zero hypotheses are composed with well-typed action paths before being joined. Search and elimination completeness remain unproved |
 | `hkat` | **met for the tactic**: `RelationAlgebra/Decide/HKATTactic.lean` closes `⌜b⌝*p ≤ p*⌜b⌝ ⊢ ⌜b⌝*p∗ ≤ p∗*⌜b⌝`, which `kat` alone provably cannot (checked with `fail_if_success kat`), merges several hypotheses, and leaves other goals untouched.  Not met for Hardin–Kozen completeness, which is not formalised |
 | `ra`/`ra_normalise` | **met for the Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
 | `imp` | big-step semantics defined inductively, proved equal to the KAT denotation, and Hoare rules derived |
@@ -360,14 +365,13 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 
 Pick up here, in this order:
 
-1. **Typed hypotheses** — typed completeness, categorical `kat`, and the algebraic untyping
-   interface are done. Extend `hkat` to hypotheses at different objects.
-   `Examples/TypedDecide.lean` exercises the current tactic interface; `Examples/Untyping.lean`
-   demonstrates direct transport of universally valid untyped laws.
+1. **Typed free models** — package semantic equivalence/order on typed syntax, bundle the
+   typed guarded-string KAT model, and expose erasure preservation on semantic equivalence.
+   Typed completeness, `kat`, `hkat`, and algebraic evaluation transport are already available;
+   `Examples/TypedHypotheses.lean` exercises the latest tactic interface.
 2. **`examples/paterson.v`** — large but self-contained, and unblocked now that `hkat` exists.
-3. **Free-model and hierarchy parity** — package semantic equivalence/order on typed syntax,
-   bundle the typed guarded-string KAT model, expose erasure preservation on semantic
-   equivalence, and port the separate KA-with-converse untyping theorem. These were not needed by the matrix proof of typed completeness.
+3. **Remaining hierarchy and untyping parity** — port the separate KA-with-converse untyping
+   theorem and the typed interfaces still marked partial in the inventory.
 4. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
    extending `ra` to `⊓`, `ᶜ`, `⊤` and residuals rather than treating them as atoms.
 5. **The independent gaps listed at the end of §8**, none of which blocks anything else:
@@ -386,3 +390,4 @@ Pick up here, in this order:
 | 2026-09-15 (typed completeness) | Proved typed KAT equality and inclusion completeness for arbitrary object alphabets and categories. The proof uses finite matrices of heterogeneous morphisms, source-row recovery, and finite-support restriction, then applies untyped completeness. Added both reflection lemmas and regressions over an infinite object alphabet. Typed reification and the general algebraic untyping interface remain next. Axiom audits report only `propext`, `Classical.choice`, and `Quot.sound`. |
 | 2026-09-15 (typed automation) | Added categorical reification to `kat`, using typed completeness and dependent environments for objects, actions, and tests. Supports equality, inequality, Boolean normalization, typed conditionals, loops, and Hoare triples. Added 31 regression declarations for heterogeneous relations, binders, multiple goals, invalid identities, and insufficient fuel. Axiom audits of the tactic proofs and reflection lemmas report only `propext`, `Classical.choice`, and `Quot.sound`. Typed `hkat` and the algebraic untyping interface remain next. |
 | 2026-09-16 (algebraic untyping) | Added `TypedKAT.Term.eval_eq_of_erase_eval_eq` and `eval_le_of_erase_eval_le`, transporting universally valid untyped laws to arbitrary typed interpretations through finite matrix recovery. No atom bounds or fuel are needed. Added 10 regression declarations covering independent tests, object identifications, arbitrary indices, higher universes, concrete relations, and rejection of a single-interpretation premise. Full build: 1520 jobs, zero warnings. Audited theorem and example proofs use only `propext`, `Classical.choice`, and `Quot.sound`. Typed `hkat` remains next. |
+| 2026-09-16 (typed hypotheses) | Added 14 typed Hoare conversion and elimination lemmas, plus categorical `hkat` using state elimination to build well-typed action paths around zero hypotheses. Boolean facts are instantiated at every matching object, including constant test families. Added 40 regression declarations covering heterogeneous sequencing and iteration, guarded constraints, rewriting, concrete relation constructors, rectangular matrices, binders, multiple goals, insufficient fuel, and invalid consequences. Full build: 1524 jobs, zero warnings. Axiom audits of all 14 lemmas and six named tactic proofs use only `propext`, `Classical.choice`, and `Quot.sound`. Search and elimination completeness remain unproved; typed free-model packaging is next. |
