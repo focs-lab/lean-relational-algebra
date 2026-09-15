@@ -1,162 +1,250 @@
-# RelationAlgebra: Kleene algebra, KAT and relation algebra in Lean 4
+# Relational algebra in Lean 4
 
-A reusable Lean 4 / Mathlib library for **Kleene algebra (KA)**, **Kleene algebra with tests
-(KAT)** and **relation algebra**, in the spirit of Damien Pous'
-[`relation-algebra`](https://github.com/damien-pous/relation-algebra) library for Rocq/Coq,
-including reflective decision procedures (`ka`, `kat`).
+Prove equations between programs and relations using **Kleene algebra (KA)** and
+**Kleene algebra with tests (KAT)**. This library provides algebraic laws, relational and
+matrix models, Hoare rules, and the `ka` and `kat` tactics, built on Mathlib.
 
-The guiding principle is to reuse Mathlib wherever it already has the right notion:
+The project is inspired by **Damien Pous's
+[relation-algebra library for Rocq/Coq](https://github.com/damien-pous/relation-algebra)**.
+His algebraic organization and approach to automated KA/KAT reasoning are central references
+for this Lean development. See [credits and references](#credits-and-references).
 
-| Concept | Provided by |
-|---|---|
-| idempotent semirings, Kleene algebras, `a∗`, Kozen's induction axioms | Mathlib (`Mathlib.Algebra.Order.Kleene`) |
-| Boolean algebras of tests | Mathlib (`BooleanAlgebra`) |
-| converse | Mathlib (`star`, `StarRing`) |
-| binary relations as sets of pairs, composition `○`, identity, converse `inv` | Mathlib (`Mathlib.Data.Rel`, `SetRel`) |
-| reflexive-transitive closure | Mathlib (`Relation.ReflTransGen`) |
-| quantales | Mathlib (`Mathlib.Algebra.Order.Quantale`) |
-| the language model `Language α` | Mathlib (`Mathlib.Computability.Language`) |
-| matrices, block matrices, reindexing | Mathlib (`Matrix`, `Matrix.fromBlocks`, `Matrix.reindex`) |
-| categories, `SingleObj`, `RelCat`, `End` | Mathlib (`CategoryTheory`) |
-| derived KA laws (sliding, denesting, bisimulation, fixpoints, ...) | **this library** |
-| KAT: the class, guarded commands, Hoare logic | **this library** |
-| relation algebras (Dedekind, Schröder, Tarski laws) | **this library** |
-| typed (many-object) Kleene algebras | **this library** |
-| the relational model of KA, KAT and relation algebra | **this library** |
-| the Kleene algebra of matrices (Kozen's block construction) | **this library** |
-| KA from a quantale (`a∗ = ⨆ n, a ^ n`), complete Kleene algebras | **this library** |
-| decision procedures `ka` (Antimirov derivatives) and `kat` (guarded strings) | **this library** |
+**Current scope:** the theorem library supports abstract KA/KAT reasoning. `ka`, `kat` and
+`hkat` all work in **any** Kleene algebra, because Kozen's completeness theorem and the
+untyped Kozen–Smith completeness theorem for KAT are both proved here. `hkat` additionally
+uses Hoare-style hypotheses from the context, and `ra` handles converse over the Kleene
+fragment. See [tactic support](#tactic-support) before choosing a model.
 
-## Layout
+## Get started
 
-```
-RelationAlgebra/
-  Kleene/
-    Basic.lean         -- derived laws of Kleene algebra (namespace `KleeneAlgebra`)
-    Quantale.lean      -- `IdemSemiring.ofQuantale`, `KleeneAlgebra.ofQuantale`
-    Complete.lean      -- `CompleteKleeneAlgebra` (star-continuous KAs); relations, languages
-  KAT/
-    Defs.lean          -- `class KleeneAlgebraWithTests T K` (abbrev `KAT`), notation `⌜b⌝`
-    Basic.lean         -- laws about tests; `KAT.ifThenElse`, `KAT.whileDo`
-    Hoare.lean         -- `KAT.HoareTriple` and the rules of Hoare logic
-  Converse.lean        -- Kleene algebras with converse; `class RelationAlgebra`; relations
-  Typed.lean           -- `class KleeneCategory`: typed KA on Mathlib categories; `SingleObj`, `RelCat`
-  Models/
-    Rel.lean           -- `SetRel α α` is a KA / KAT (scoped instances in namespace `SetRel`)
-    Bool.lean          -- every Kleene algebra is a KAT with the trivial tests `Bool`
-    Matrix.lean        -- `Matrix n n K` is a KA when `K` is (`Matrix.kstar_fromBlocks`)
-  Decide/
-    Term.lean          -- regular expressions `KleeneAlgebra.Term`; soundness of the language model
-    Antimirov.lean     -- partial derivatives, bisimulation checker, `Term.decideEq`, its soundness
-    Tactic.lean        -- the `ka` tactic
-    GuardedString.lean -- KAT terms, atoms, guarded strings, derivatives, `KTerm.decideEq`
-    KATSound.lean      -- atoms of a Boolean algebra; soundness of guarded strings in complete KATs
-    KATTactic.lean     -- the `kat` tactic
-  Examples/
-    Basic.lean         -- sanity checks and small examples
-    Decide.lean        -- examples for `ka` and `kat`
-```
+Install [Lean and Lake](https://lean-lang.org/install/), then run:
 
-## Design notes
-
-**Kleene algebra.** We use Mathlib's `KleeneAlgebra` class unchanged.  Its order is the
-semilattice order `a ≤ b ↔ a + b = b`, and the star axioms are Kozen's.  `Kleene/Basic.lean`
-adds the theorems one actually needs when reasoning in KA: least-fixpoint characterisations,
-`a∗ * a = a * a∗`, the sliding rule `a * (b * a)∗ = (a * b)∗ * a`, the denesting rules
-`(a + b)∗ = a∗ * (b * a∗)∗ = (a∗ * b)∗ * a∗`, the bisimulation rules, and
-`(a + b)∗ = a∗ * b∗` under commutation.
-
-**Tests.** Following Pous, a KAT is *two-sorted*: a Boolean algebra `T` of tests and a Kleene
-algebra `K`, related by a mixin class
-
-```lean
-class KleeneAlgebraWithTests (T K : Type*) [BooleanAlgebra T] [KleeneAlgebra K] where
-  test : T → K
-  test_bot : test ⊥ = 0
-  test_top : test ⊤ = 1
-  test_sup (a b : T) : test (a ⊔ b) = test a + test b
-  test_inf (a b : T) : test (a ⊓ b) = test a * test b
-```
-
-so that both Mathlib hierarchies are reused as they are.  With `open scoped KAT`, `⌜b⌝`
-denotes `test b`.  Guarded commands are `ifThenElse b p q = ⌜b⌝ * p + ⌜bᶜ⌝ * q` and
-`whileDo b p = (⌜b⌝ * p)∗ * ⌜bᶜ⌝`; a Hoare triple is `HoareTriple b p c := ⌜b⌝ * p * ⌜cᶜ⌝ = 0`
-(Kozen 2000), and the rules of Hoare logic are theorems.
-
-**Converse and relation algebra.** Converse is Mathlib's `star`; a Kleene algebra with
-converse is just `[KleeneAlgebra K] [StarRing K]`, and `star (a∗) = (star a)∗` is a theorem.
-`class RelationAlgebra K extends KleeneAlgebra K, BooleanAlgebra K, Star K` adds the Dedekind
-law, from which the modular laws, the Schröder rules and Tarski's law are derived.
-
-**Typed Kleene algebra.** `class KleeneCategory C` on a Mathlib `Category` (hom-sets are
-join-semilattices with bottom, composition is bilinear, endomorphisms have a star with
-*rectangular* induction axioms) is Pous' many-object presentation.  Every KA is a one-object
-Kleene category (`SingleObj`), `RelCat` is one, and every endomorphism monoid `End X` is a KA.
-
-**Relations.** Mathlib's `SetRel α β` is reducibly `Set (α × β)`.  Because `Set` already has
-scoped pointwise `+`/`*` instances in Mathlib, the ring-like instances on `SetRel α α` are
-**scoped**: `open scoped SetRel` activates `Mul`, `Add`, `One`, `Zero`, `KStar`,
-`IdemSemiring`, `IsQuantale`, `KleeneAlgebra`, `CompleteKleeneAlgebra`, `RelationAlgebra` and
-`KleeneAlgebraWithTests (Set α) (SetRel α α)`.  Here `R * S = R ○ S`, `R + S = R ∪ S`, `R∗` is
-`Relation.ReflTransGen`, `star R = R.inv`, and the test `s : Set α` is the sub-identity
-relation `SetRel.ofSet s`.
-
-**Matrices.** `Matrix n n K` is a Kleene algebra for every finite `n` (Kozen).  The star is
-built by induction on the size along `Fin (k + 1) ≃ Fin k ⊕ Fin 1` using the `2 × 2` block
-formula, transported along `Fintype.equivFin`, and since the star of a KA is unique the block
-formula `Matrix.kstar_fromBlocks` holds for the resulting instance.
-
-**Decision procedures.** `ka` and `kat` are reflective tactics.  `ka` reifies the goal into
-regular expressions and runs (inside the kernel) a bisimulation search based on Antimirov
-partial derivatives; the certificate is checked by a verified checker
-(`KleeneAlgebra.Term.lang_eq_of_decideEq`).  `kat` does the same with guarded-string
-derivatives over the `2 ^ k` atoms of the `k` primitive tests
-(`KAT.KTerm.gs_eq_of_decideEq`), after unfolding `ifThenElse`, `whileDo` and `HoareTriple`.
-
-**Scope of the soundness proofs.** The tactics are proved sound for *complete* Kleene
-algebras and KATs (`CompleteKleeneAlgebra`: a Kleene algebra whose order is a complete lattice
-and whose multiplication preserves arbitrary joins).  This is stronger than star-continuity.
-The instances provided are relations `SetRel α α` (with tests `Set α`) and languages
-`Language α` (with the trivial tests `Bool`); in particular `ka` does not (yet) apply to
-matrices, whose `CompleteKleeneAlgebra` instance is not provided, nor to a goal stated for an
-arbitrary `[KleeneAlgebra K]`.  The soundness statements
-(`KleeneAlgebra.Term.eval_eq_of_lang_eq`, `KAT.KTerm.eval_eq_of_decideEq`) are of the form
-"if the checker accepts a certificate, the equation holds"; the search is bounded by fuel, so
-a failure means either an invalid equation or exhausted fuel, and no completeness of the
-search is proved.  Pous' tactics are sound for *all* KAs/KATs because his library proves
-Kozen's completeness theorems; that is the main remaining gap (see below).
-
-```lean
-open scoped SetRel KAT
-example (R S : SetRel α α) : (R + S)∗ = R∗ * (S * R∗)∗ := by ka
-example (s : Set α) (R : SetRel α α) : KAT.HoareTriple ⊤ (KAT.whileDo s R) sᶜ := by kat
-```
-
-## Building
-
-```
+```sh
+git clone https://github.com/focs-lab/lean-relational-algebra.git
+cd lean-relational-algebra
 lake exe cache get
 lake build
 ```
 
-Toolchain: Lean `v4.30.0`, Mathlib `v4.30.0` (see `lean-toolchain`, `lakefile.toml`).
+The project pins **Lean 4.30.0 and Mathlib 4.30.0**. The cache command downloads prebuilt
+Mathlib dependencies.
 
-## Comparison with `relation-algebra` (Rocq) and roadmap
+Save this as `Demo.lean` in the repository and check it with `lake env lean Demo.lean`:
 
-What is here now covers the algebraic core of Pous' library (the KA / KAT / relation algebra
-hierarchy, relations, languages, matrices, the typed presentation) and the two decision
-procedures, on top of Mathlib.  Remaining differences and natural next steps:
+```lean
+import RelationAlgebra
 
-1. **Completeness.** Kozen's completeness theorem for KA (w.r.t. `Language`) and
-   Kozen–Smith's for KAT (w.r.t. guarded strings) would make `ka`/`kat` sound in arbitrary
-   KAs/KATs, not only complete ones.  The matrix construction here is the main ingredient.
-   This is the priority: abstract `[KleeneAlgebra K]` / `[KAT T K]` goals currently have no
-   automation beyond the lemma library.
-2. **`CompleteKleeneAlgebra (Matrix n n K)`** for complete `K`, so that `ka` applies to
-   matrices over relations or languages.
-3. **Typed KAT and typed matrices** in the `KleeneCategory` setting (heterogeneous relations
-   `SetRel α β`, rectangular matrices as morphisms).
-4. **Computable stars**: the star on `Matrix n n K` is noncomputable (it goes through
-   `Fintype.equivFin`); a computable version for `Fin n` is easy to add.
-5. **More of the lattice hierarchy**: residuals, `ra` decision procedure for relation
-   algebra fragments, allegories.
+open scoped Computability SetRel KAT
+
+variable {α : Type*}
+
+-- Denesting: two equivalent ways to express iteration.
+example (R S : SetRel α α) : (R + S)∗ = R∗ * (S * R∗)∗ := by
+  ka
+
+-- A guard and its negation cannot both hold.
+example (b : Set α) : (⌜b⌝ : SetRel α α) * ⌜bᶜ⌝ = 0 := by
+  kat
+
+-- Whenever the loop terminates, its guard is false.
+example (b : Set α) (R : SetRel α α) :
+    KAT.HoareTriple ⊤ (KAT.whileDo b R) bᶜ := by
+  kat
+
+-- `hkat` also uses the hypotheses in the context.
+example (b : Set α) (R : SetRel α α) (h : ⌜b⌝ * R ≤ R * ⌜b⌝) :
+    (⌜b⌝ : SetRel α α) * R∗ ≤ R∗ * ⌜b⌝ := by
+  hkat
+
+-- `ra` adds converse, for any Kleene algebra with an involution.
+example (R S : SetRel α α) : star (R * S) = star S * star R := by
+  ra
+```
+
+More examples: [algebra and relations](RelationAlgebra/Examples/Basic.lean) ·
+[using the tactics](RelationAlgebra/Examples/Decide.lean).
+
+<details>
+<summary><strong>Use as a dependency in another project</strong></summary>
+
+Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefile.toml`:
+
+```toml
+[[require]]
+name = "relation_algebra"
+git = "https://github.com/focs-lab/lean-relational-algebra.git"
+rev = "ed50be231ce6b2699f91a98c19ada90c17b3b885"
+```
+
+This pins the library to the code described here, including KA and untyped KAT completeness.
+Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
+the library.
+
+</details>
+
+## Reading the notation
+
+For relations `R S : SetRel α α` and a test `b : Set α`:
+
+| Expression | Meaning |
+| --- | --- |
+| `R + S` | Union / nondeterministic choice |
+| `R * S` | Sequential composition: first `R`, then `S` |
+| `0`, `1` | Empty relation, identity relation |
+| `R∗` | Zero or more steps of `R` (reflexive-transitive closure) |
+| `R ≤ S` | Relation inclusion |
+| `⌜b⌝` | Identity restricted to states satisfying `b` |
+| `bᶜ` | Negation of the test |
+| `star R` | Converse: reverse every pair in `R` |
+
+`open scoped Computability` enables `∗`; `KAT` enables `⌜b⌝`; `SetRel` selects the
+relational algebra instances. The last scope matters because relations are represented as
+sets, which can also carry Mathlib's pointwise operations.
+
+`KAT.ifThenElse b p q` and `KAT.whileDo b p` encode guarded commands.
+`KAT.HoareTriple b p c` means **partial correctness**: every terminating execution of `p`
+from `b` ends in `c`. It is defined by `⌜b⌝ * p * ⌜cᶜ⌝ = 0`.
+
+## Tactic support
+
+| Tactic | Goals | Operations understood |
+| --- | --- | --- |
+| `ka` | Equalities and inequalities | `0`, `1`, `+`, `*`, `∗` |
+| `kat` | Equalities, inequalities, and `KAT.HoareTriple` | KA operations, embedded Boolean tests, `ifThenElse`, `whileDo` |
+| `hkat` | As `kat`, using Hoare-style hypotheses from the context | As `kat` |
+| `ra`, `ra_normalise`, `ra_simpl` | Equalities and inequalities | KA operations and converse |
+
+In one paragraph: `ka` proves Kleene-algebra identities in **any** Kleene algebra; `kat` adds
+Boolean tests, in any Kleene algebra too; `hkat` is `kat` plus the hypotheses in your context;
+`ra` adds converse but is a normaliser, not a decision procedure.
+
+`ka` requires only `[KleeneAlgebra K]`. It is sound in every Kleene algebra because
+**Kozen's completeness theorem** is proved in
+[Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean): regular expressions with
+the same language are equal in every Kleene algebra.
+
+`kat` and `hkat` require `[KleeneAlgebra K]` plus a `KleeneAlgebraWithTests T K` instance for
+an arbitrary `[BooleanAlgebra T]`. They are sound in every such algebra because the untyped
+**Kozen–Smith completeness theorem** is proved in
+[KATCompleteness/Main](RelationAlgebra/KATCompleteness/Main.lean): terms with the same
+guarded-string semantics have the same value in every KAT. Neither completeness of the lattice,
+star-continuity, commutativity nor finiteness is assumed. Relations have tests `Set α`;
+languages have the trivial tests `Bool`.
+
+`ra` requires `[KleeneAlgebra K] [StarRing K]`, which a `RelationAlgebra` instance supplies.
+
+Three guarantees are worth keeping apart. *Accepting-checker soundness* is proved for all four
+tactics: if the checker accepts, the goal holds. *Algebraic completeness* is proved for Kleene
+algebra, and for KAT in the untyped case. *Search completeness* is proved for none of them.
+
+`ka`, `kat` and `hkat` search for bisimulation certificates using derivatives, and Lean's
+kernel checks the resulting proofs. Search uses **1,000 units of fuel** by default; try
+`ka 5000` or `hkat 200000` for a larger search. With `k` primitive tests, `kat` enumerates
+`2^k` Boolean assignments, so adding tests can be expensive: the four-test example in
+[Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) needs `hkat 500000` and
+about a minute. `ra` does not search at all; it normalises both sides and compares.
+
+Keep these limits in mind:
+
+- A failed tactic does **not** establish that the goal is false: fuel, resource limits, or
+  unsupported syntax may prevent a proof. Search completeness is not proved.
+- `ka`, `kat` and `ra` ignore the local context. `hkat` is the one that reads it: it turns
+  Hoare-style hypotheses into the form `z ≤ 0`, merges them, eliminates them à la
+  Hardin–Kozen, and then calls `kat`.
+- `kat` and `hkat` do not support typed categorical goals; the typed completeness theorem is
+  not formalised.
+- `ra` covers `0`, `1`, `+`, `*`, `∗` and converse. It treats `⊓`, `ᶜ`, `⊤` and residuals as
+  opaque atoms, and it is a normaliser rather than a decision procedure, so it is incomplete
+  by design, as upstream's is.
+
+The tactics apply to abstract KATs, not just to concrete models:
+
+```lean
+import RelationAlgebra
+open scoped Computability KAT
+
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b : T) (p : K) : KAT.HoareTriple ⊤ (KAT.whileDo b p) bᶜ := by
+  kat
+
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b : T) (p : K) (h : KAT.HoareTriple b p b) : KAT.HoareTriple b p∗ b := by
+  hkat
+```
+
+The proved Hoare rules are also available directly. For example, an invariant preserved by the
+guarded body is preserved by the loop:
+
+```lean
+example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
+    (b i : T) (p : K) (h : KAT.HoareTriple (b ⊓ i) p i) :
+    KAT.HoareTriple i (KAT.whileDo b p) (bᶜ ⊓ i) :=
+  KAT.HoareTriple.whileDo h
+```
+
+## Library guide
+
+The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
+`Matrix`, and category APIs. Tests form a separate Boolean algebra `T`, connected to `K`
+by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
+
+| To work with… | Start here |
+| --- | --- |
+| Sliding, denesting, bisimulation, and least fixed points | [Kleene/Basic](RelationAlgebra/Kleene/Basic.lean) |
+| Quantale constructions and complete KAs | [Kleene/Quantale](RelationAlgebra/Kleene/Quantale.lean), [Kleene/Complete](RelationAlgebra/Kleene/Complete.lean) |
+| Tests, guarded commands, and partial-correctness rules | [KAT/Defs](RelationAlgebra/KAT/Defs.lean), [KAT/Basic](RelationAlgebra/KAT/Basic.lean), [KAT/Hoare](RelationAlgebra/KAT/Hoare.lean) |
+| Relations and finite matrices | [Models/Rel](RelationAlgebra/Models/Rel.lean), [Models/Matrix](RelationAlgebra/Models/Matrix.lean), [Models/MatrixExt](RelationAlgebra/Models/MatrixExt.lean) |
+| Traces, guarded strings, setoid and finite relations | [Models/Trace](RelationAlgebra/Models/Trace.lean), [Models/SetoidRel](RelationAlgebra/Models/SetoidRel.lean), [Models/FinRel](RelationAlgebra/Models/FinRel.lean) |
+| Converse, relation algebra, residuals, allegories, vectors and points | [Converse](RelationAlgebra/Converse.lean), [Residuated](RelationAlgebra/Residuated.lean), [Allegory](RelationAlgebra/Allegory.lean), [Vectors](RelationAlgebra/Vectors.lean) |
+| Typed (many-object) Kleene algebra and typed KAT | [Typed](RelationAlgebra/Typed.lean), [TypedKAT](RelationAlgebra/TypedKAT.lean) |
+| Tactics, derivatives, and soundness proofs | [Decide](RelationAlgebra/Decide) |
+| Hoare hypotheses and the `hkat` tactic | [KAT/Hypotheses](RelationAlgebra/KAT/Hypotheses.lean), [Decide/HKATTactic](RelationAlgebra/Decide/HKATTactic.lean) |
+| Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
+| Automata and Kozen's completeness proof | [Automata](RelationAlgebra/Automata), [Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean) |
+| Kozen–Smith completeness for KAT (untyped) | [KATCompleteness](RelationAlgebra/KATCompleteness) |
+| The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
+| Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
+
+Each module starts with an overview of its definitions and conventions. The Hoare rules
+cover propositional control flow; termination proofs are outside their scope. The matrix star
+uses Kozen's block construction; the general instance is noncomputable, and
+`Matrix.kstarFin` is a computable version for `Fin n` proved equal to it.
+
+[PORTING.md](PORTING.md) tracks coverage of Pous' library module by module, and is explicit
+about what is proved and what is not.
+
+## Next steps
+
+KA completeness and untyped KAT completeness are done, so `ka`, `kat` and `hkat` all work in
+arbitrary Kleene algebras. The priority is the **typed** KAT completeness theorem, which needs
+the typed free syntax of upstream's `gregex.v` and is what upstream's untyping theorem for KAT
+is derived from. Further work includes extending `ra` beyond the Kleene fragment and
+Paterson's flowchart equivalence. [PORTING.md](PORTING.md) has the dependency-ordered plan and an exact
+continuation point.
+
+## Credits and references
+
+**Damien Pous and the contributors to
+[relation-algebra](https://github.com/damien-pous/relation-algebra)** deserve particular
+credit for the Rocq/Coq development that motivates this project: its treatment of tests and
+typed algebras, and its use of derivatives and reflection for automated proofs.
+Its [documentation](https://perso.ens-lyon.fr/damien.pous/ra/) is a valuable companion.
+That library goes further than this one in several respects: it proves KAT completeness in the
+*typed* setting, where only the untyped statement is proved here, its `ra` covers the whole
+lattice and residual syntax rather than just the Kleene fragment, and its structures are typed
+throughout. [PORTING.md](PORTING.md) records the gaps module by module.
+
+We also build on the work of the **[Lean](https://github.com/leanprover/lean4)** and
+**[Mathlib](https://github.com/leanprover-community/mathlib4)** contributors, reusing their
+proof infrastructure, algebraic hierarchies, and models.
+
+The main mathematical and mechanization references are:
+
+- **Damien Pous (2013).** [Kleene Algebra with Tests and Coq Tools for While Programs](https://arxiv.org/abs/1302.1737). KAT formalization and automation.
+- **Dexter Kozen (1994).** [A Completeness Theorem for Kleene Algebras and the Algebra of Regular Events](https://www.cs.cornell.edu/~kozen/papers/ka.pdf). KA axioms, matrices, and completeness.
+- **Dexter Kozen (1997).** [Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/kat.pdf). The KAT framework.
+- **Dexter Kozen (2000).** [On Hoare Logic and Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/Hoare.pdf). The algebraic encoding of partial correctness.
+- **Dexter Kozen and Frederick Smith (CSL 1996).** [Kleene Algebra with Tests: Completeness and Decidability](https://www.cs.cornell.edu/~kozen/Papers/gs.pdf). Guarded strings; the untyped form of this result is proved here in `RelationAlgebra/KATCompleteness/`.
+- **Valentin Antimirov (1996).** [Partial Derivatives of Regular Expressions and Finite Automaton Constructions](https://doi.org/10.1016/0304-3975(95)00182-4). The partial-derivative construction.
+- **Alexander Krauss and Tobias Nipkow (2012).** [Proof Pearl: Regular Expression Equivalence and Relation Algebra](https://www21.in.tum.de/~nipkow/pubs/jar12.pdf). Verified equivalence checking and its application to relations.
+- **Alfred Tarski (1941).** [On the Calculus of Relations](https://doi.org/10.2307/2268577). Foundations of relation algebra.
