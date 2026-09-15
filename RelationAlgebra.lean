@@ -15,8 +15,15 @@ import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.Matrix
 import RelationAlgebra.Models.SetoidRel
 import RelationAlgebra.Models.FinRel
+import RelationAlgebra.Automata.ZeroOne
+import RelationAlgebra.Automata.Defs
+import RelationAlgebra.Automata.Det
+import RelationAlgebra.Automata.Lang
+import RelationAlgebra.Automata.Minimal
+import RelationAlgebra.Automata.Thompson
 import RelationAlgebra.Decide.Term
 import RelationAlgebra.Decide.Antimirov
+import RelationAlgebra.Decide.KACompleteness
 import RelationAlgebra.Decide.Tactic
 import RelationAlgebra.Decide.GuardedString
 import RelationAlgebra.Decide.KATSound

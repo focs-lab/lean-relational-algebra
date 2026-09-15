@@ -1,27 +1,34 @@
-import RelationAlgebra.Decide.Antimirov
+import RelationAlgebra.Decide.KACompleteness
 import Mathlib.Util.AtomM
 
 /-!
 # The `ka` tactic
 
-`ka` closes goals of the form `a = b` or `a ≤ b` in a *complete* Kleene algebra
-(`CompleteKleeneAlgebra`; e.g. relations `SetRel α α` with `open scoped SetRel`, or languages
-`Language α`) that hold in all Kleene algebras, i.e. whose two sides denote the same regular
-language when the maximal non-Kleene-algebraic subterms are read as variables.
+`ka` closes goals of the form `a = b` or `a ≤ b` in **any** Kleene algebra whose two sides
+denote the same regular language when the maximal non-Kleene-algebraic subterms are read as
+variables.  It applies to an abstract `[KleeneAlgebra K]`, as well as to concrete models such as
+relations `SetRel α α` (after `open scoped SetRel`), languages `Language α`, and matrices over
+any of these.
 
 It works by reflection:
 
 1. the two sides are reified into `KleeneAlgebra.Term`s, atoms being collected with `AtomM`;
 2. `KleeneAlgebra.Term.decideEq` (Antimirov partial derivatives + bisimulation) is run by the
    kernel on the two terms, producing a certificate `decideEq e f fuel = true`;
-3. `KleeneAlgebra.Term.eval_eq_of_decideEq` turns the certificate into the desired equation,
-   whose sides are definitionally the original ones.
+3. `KleeneAlgebra.Term.eval_eq_of_decideEq'` turns the certificate into the desired equation,
+   whose sides are definitionally the original ones.  That step rests on **Kozen's completeness
+   theorem** (`KleeneAlgebra.Term.completeness_eq`, proved in
+   `RelationAlgebra.Decide.KACompleteness`), which is what makes the tactic sound for an
+   arbitrary Kleene algebra rather than only a star-continuous one.
 
 Use `ka 5000` to change the amount of fuel (default `1000`) for the exploration.
 
-This is the counterpart of the `ka` tactic of Pous' `relation-algebra` library, restricted to
-star-continuous models (soundness in arbitrary Kleene algebras would require Kozen's
-completeness theorem).
+This is the counterpart of the `ka` tactic of Pous' `relation-algebra` library.
+
+Two guarantees must not be confused.  *Soundness when the checker accepts* is proved: an
+accepted certificate yields the equation in every Kleene algebra.  *Completeness of the search*
+is not: the exploration is fuel-bounded, so a failure means either an invalid equation or
+exhausted fuel.
 -/
 
 open Lean Meta Elab Tactic Mathlib.Tactic
@@ -70,9 +77,8 @@ def kaCore (fuel : ℕ) : TacticM Unit := do
       | _ => throwError "ka: the goal must be an equality or an inequality"
     let some u := (← getLevel K).dec
       | throwError "ka: unexpected universe level for {K}"
-    let inst ← try synthInstance (mkApp (mkConst ``CompleteKleeneAlgebra [u]) K)
-      catch _ => throwError
-        "ka: {K} is not a complete Kleene algebra (`CompleteKleeneAlgebra {K}` not found)"
+    let inst ← try synthInstance (mkApp (mkConst ``KleeneAlgebra [u]) K)
+      catch _ => throwError "ka: {K} is not a Kleene algebra (`KleeneAlgebra {K}` not found)"
     let (te, tf, atoms) ← AtomM.run .reducible do
       let te ← reify lhs
       let tf ← reify rhs
@@ -92,17 +98,17 @@ def kaCore (fuel : ℕ) : TacticM Unit := do
     let hDecide ← mkExpectedTypeHint
       (mkApp2 (mkConst ``Eq.refl [Level.one]) (mkConst ``Bool) (mkConst ``Bool.true))
       (mkApp3 (mkConst ``Eq [Level.one]) (mkConst ``Bool) prop (mkConst ``Bool.true))
-    let thmName := if isLe then ``KleeneAlgebra.Term.eval_le_of_decideLe
-      else ``KleeneAlgebra.Term.eval_eq_of_decideEq
+    let thmName := if isLe then ``KleeneAlgebra.Term.eval_le_of_decideLe'
+      else ``KleeneAlgebra.Term.eval_eq_of_decideEq'
     let pf := mkAppN (mkConst thmName [u]) #[K, inst, te, tf, fuelE, hDecide, ρ]
     let pfType ← inferType pf
     unless ← isDefEq pfType goalType do
       throwError "ka: failed to reify the goal{indentExpr goalType}\nas{indentExpr pfType}"
     goal.assign pf
 
-/-- `ka` decides equalities and inequalities of complete Kleene algebras (relations, languages)
-that are valid in all Kleene algebras, by reflection into regular expressions and Antimirov
-derivatives.  `ka n` uses `n` units of fuel for the exploration (default `1000`). -/
+/-- `ka` proves equalities and inequalities that hold in every Kleene algebra, by reflection
+into regular expressions and Antimirov derivatives, using Kozen's completeness theorem.
+`ka n` uses `n` units of fuel for the exploration (default `1000`). -/
 syntax (name := ka) "ka" (ppSpace num)? : tactic
 
 elab_rules : tactic

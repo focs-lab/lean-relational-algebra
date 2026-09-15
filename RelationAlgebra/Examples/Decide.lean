@@ -7,6 +7,46 @@ import RelationAlgebra.Decide.KATTactic
 
 open scoped Computability
 
+section AbstractKleeneAlgebra
+
+/-! ### `ka` in an arbitrary Kleene algebra
+
+Since `ka` rests on Kozen's completeness theorem it needs no completeness assumption on the
+algebra: these goals are stated for an abstract `[KleeneAlgebra K]`. -/
+
+variable {K : Type*} [KleeneAlgebra K] (a b c : K)
+
+example : (a + b)∗ = a∗ * (b * a∗)∗ := by ka
+
+example : a * (b * a)∗ = (a * b)∗ * a := by ka
+
+example : (a∗)∗ = a∗ := by ka
+
+example : 1 + a * a∗ = a∗ := by ka
+
+example : (a + b + c)∗ = (a∗ * (b + c))∗ * a∗ := by ka
+
+example : a∗ * a∗ ≤ a∗ := by ka
+
+example : a * b ≤ (a + b)∗ := by ka
+
+example : (a * b)∗ * a = a * (b * a)∗ := by ka
+
+/-- `ka` rejects an identity that is not valid in all Kleene algebras. -/
+example : True := by
+  have : ¬ (∀ (K : Type) (_ : KleeneAlgebra K) (x y : K), x * y = y * x) := by
+    intro h
+    have := h (Language Bool) inferInstance {[true]} {[false]}
+    have hmem : [true, false] ∈ ({[true]} * {[false]} : Language Bool) :=
+      Language.mem_mul.2 ⟨[true], rfl, [false], rfl, rfl⟩
+    rw [this] at hmem
+    obtain ⟨u, hu, v, hv, huv⟩ := Language.mem_mul.1 hmem
+    rw [show u = [false] from hu, show v = [true] from hv] at huv
+    exact absurd huv (by decide)
+  trivial
+
+end AbstractKleeneAlgebra
+
 section Relations
 
 open scoped SetRel
