@@ -11,6 +11,7 @@ import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedKAT
+import RelationAlgebra.TypedKAT.Hypotheses
 import RelationAlgebra.TypedKAT.Syntax
 import RelationAlgebra.TypedKAT.GuardedString
 import RelationAlgebra.TypedKAT.Untyping
