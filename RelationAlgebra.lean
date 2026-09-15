@@ -57,3 +57,4 @@ import RelationAlgebra.Examples.CompilerOpts
 import RelationAlgebra.Examples.TypedSyntax
 import RelationAlgebra.Examples.TypedCompleteness
 import RelationAlgebra.Examples.TypedDecide
+import RelationAlgebra.Examples.Untyping
