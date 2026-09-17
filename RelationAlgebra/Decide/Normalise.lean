@@ -38,16 +38,17 @@ annihilation by `0` for `*`, distributivity of `*` over `+`, `star_zero`, `star_
 Everything that genuinely uses the Kleene-star axioms or the Boolean structure:
 `(1 + a)∗ = a∗`, `a∗ * a = a * a∗`, sliding `a * (b * a)∗ = (a * b)∗ * a`, denesting
 `(a + b)∗ = a∗ * (b * a∗)∗`, `(a∗ * b∗)∗ = (a + b)∗`, and anything involving `⊓`, `ᶜ`, `⊤`
-or residuals — those operations are not even part of `RaTerm`, and a goal that mentions them
-is reified as an opaque variable.  Starred subterms are compared syntactically *after* their
+or residuals — those operations are not part of `RaTerm`. The tactic handles them
+separately through the proved rewrites and structural checker in `Decide.FullRATactic`.
+Starred subterms are compared syntactically *after* their
 arguments have been normalised, so `(a + b)∗` and `(b + a)∗` are identified, and so are
 `a∗∗ * a` and `a∗ * a`; but nothing beyond the laws listed above is applied, so for instance
 `a∗ * a` and `a * a∗` are not identified.
 
-Consequently the derived tactic `ra` is **sound but incomplete**, exactly as upstream's is:
-it proves what the structural laws prove and nothing more.  In particular a failure of `ra`
-says nothing about the validity of the goal.  (For the complete decision procedure of the
-star fragment *without* converse, use `ka`, which rests on Kozen's completeness theorem.)
+This reflected core is **sound but incomplete**. The `ra` tactic also has a separate
+Boolean/residual extension, which is incomplete as well. A failure says nothing about
+the validity of the goal. For the star fragment *without* converse, `ka` uses Kozen's
+completeness theorem and a fuel-bounded certificate search; search completeness is not proved.
 
 Canonicity of the normal form for the fragment listed above is *not* formally proved here —
 only `RaTerm.eval_norm`, which is what makes the tactics sound.  Upstream makes the same

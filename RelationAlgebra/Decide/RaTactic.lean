@@ -1,43 +1,40 @@
 import RelationAlgebra.Decide.Normalise
 import RelationAlgebra.Decide.TypedRaTactic
+import RelationAlgebra.Decide.FullRATactic
 import Mathlib.Util.AtomM
 
 /-!
 # The `ra`, `ra_normalise` and `ra_simpl` tactics
 
-These are the Lean counterparts of the tactics of the same name in Damien Pous'
-Rocq/Coq library [`relation-algebra`](https://github.com/damien-pous/relation-algebra)
-(`theories/normalisation.v`).  They work by reflection into `RaTerm`, using the verified
-normalisation procedure of `RelationAlgebra.Decide.Normalise`:
+These tactics follow Damien Pous' `theories/normalisation.v` in
+[`relation-algebra`](https://github.com/damien-pous/relation-algebra).
 
-* `ra_normalise` replaces both sides of an `=` or `≤` goal by their normal form
-  (`RaTerm.norm`) and leaves the resulting goal to the user.  It never fails on a goal it
-  can parse, and closes the goal when the two normal forms coincide.
-* `ra` does the same and then closes the goal, failing with the two normal forms if they
-  differ.
-* `ra_simpl` performs the lighter cleanup `RaTerm.simplify` (units, zeros, `0∗`, `1∗`,
-  `a∗∗`, and converses pushed to the leaves), without sorting sums or distributing
-  composition over union.
+* `ra` normalizes both sides of an equality or inequality and attempts to close it.
+  Failure does not imply the statement is false.
+* `ra_normalise` performs the same normalization and leaves any unresolved goal.
+* `ra_simpl` performs lighter cleanup without distributing composition or sorting
+  joins and meets. It leaves any unresolved goal.
 
-All three apply to any `K` with `[KleeneAlgebra K] [StarRing K]` — in particular to any
-`[RelationAlgebra K]`, and to relations `SetRel α α` after `open scoped SetRel`.  The
-maximal subterms that are not built from `0`, `1`, `+`, `*`, `∗` and `star` (converse) are
-treated as opaque variables.
+For KA with converse, the tactics reflect into `RaTerm`, using the correctness theorems
+in `Decide.Normalise`. Untyped goals require `[KleeneAlgebra K] [StarRing K]`; categorical
+goals use `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]`. The typed
+reifier retains endpoints and transports proofs through
+`TypedRA.Term.eval_eq_of_erase_eval_eq`.
 
-Categorical goals use `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]`.
-Their operations are `⊥`, `𝟙`, `⊔`, `≫`, `∗`, and `converse` (scoped notation `ᵒ`).
-The typed reifier retains endpoints and transports normalization proofs through
-`TypedRA.Term.eval_eq_of_erase_eval_eq`. All three commands introduce leading binders
-and focus on the original goal.
+Goals containing intersection, complement, top, Boolean difference/implication, or
+residuals instead use `Decide.FullRATactic`. This extension recursively applies proved
+rewrites, including KA operations under Boolean and residual operations, and a bounded
+structural inclusion checker. Rules cover lattice order, variance, residual adjunctions
+and cancellation, and Dedekind/modular inequalities. Each rule requires its corresponding
+algebraic instance; residual-only goals need neither Boolean operations nor converse.
+`RelationAlgebra` and the typed `RelationCategory` hierarchy supply the full operations.
 
-## Guarantees
-
-`ra` is **sound but incomplete**, exactly as upstream's is.  Soundness rests on
-`RaTerm.eval_norm`, which is fully proved; but `RaTerm.norm` only applies the *structural*
-laws (see the docstring of `RelationAlgebra.Decide.Normalise` for the precise list), so a
-failure of `ra` says nothing about the validity of the goal.  For the star fragment without
-converse, `ka` is a complete decision procedure (it rests on Kozen's completeness theorem),
-and `apply antisym <;> ra` may succeed where `ra` alone fails.
+The two proof paths are kernel checked. Neither canonicity nor completeness of `ra` is
+asserted. The Boolean/residual path does not extend `RaTerm` or invoke its KA-only untyping
+theorem on richer syntax. Its limits are 16 normalization passes and 4096 structural rule
+attempts. All three tactics introduce leading binders, focus on the original goal, and
+ignore local hypotheses. For deeper KA/KAT iteration identities, use `ka` or `kat`; their
+search is also fuel bounded, with no proved search completeness.
 
 ## References
 
@@ -158,6 +155,17 @@ def kernelIsTrue (p : Expr) : MetaM Bool := do
 sides become identical, the goal is closed by reflexivity. -/
 def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  let extended ← withMainContext do
+    let target ← whnfR (← instantiateMVars (← (← getMainGoal).getType))
+    unless target.isAppOfArity ``Eq 3 || target.isAppOfArity ``LE.le 4 do
+      throwError "ra: the goal must be an equality or an inequality"
+    let scalar := (← TypedRA.Tactic.homType? target.getAppArgs[0]!).isNone
+    pure (FullRA.hasOperations target scalar)
+  if extended then
+    FullRA.normalize (fn == ``RaTerm.simplify)
+    unless (← getGoals).isEmpty do
+      if fn == ``RaTerm.norm then discard FullRA.close
+    return
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)
@@ -201,9 +209,21 @@ def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
     else
       try evalTactic (← `(tactic| rfl)) catch _ => pure ()
 
-/-- The core of the `ra` tactic: close the goal when the two normal forms agree. -/
+/-- Close by reflected KA normalization or the Boolean/residual structural checker. -/
 def raCore : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  let extended ← withMainContext do
+    let target ← whnfR (← instantiateMVars (← (← getMainGoal).getType))
+    unless target.isAppOfArity ``Eq 3 || target.isAppOfArity ``LE.le 4 do
+      throwError "ra: the goal must be an equality or an inequality"
+    let scalar := (← TypedRA.Tactic.homType? target.getAppArgs[0]!).isNone
+    pure (FullRA.hasOperations target scalar)
+  if extended then
+    FullRA.normalize false
+    if (← getGoals).isEmpty then return
+    if ← FullRA.close then return
+    throwError "ra: structural Boolean/residual normalization and bounded inclusion checking \
+      did not close the goal"
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)
@@ -232,26 +252,22 @@ def raCore : TacticM Unit := focus do
       throwError "ra: failed to reify the goal{indentExpr goalType}"
     goal.assign proof
 
-/-- `ra` proves equalities and inequalities of relation algebra that follow from the
-*structural* laws: the idempotent-semiring laws, distributivity, the laws of converse, and
-`0∗ = 1`, `1∗ = 1`, `a∗∗ = a∗`.  It is sound but deliberately incomplete; `ka` is complete
-for the fragment without converse. -/
+/-- `ra` proves structural equalities and inequalities involving KA operations, converse,
+Boolean operations and residuals. It produces kernel-checked proofs and is incomplete. -/
 syntax (name := ra) "ra" : tactic
 
 elab_rules : tactic
   | `(tactic| ra) => raCore
 
-/-- `ra_normalise` replaces both sides of an `=` or `≤` goal by their relation-algebra normal
-form, and closes the goal if the two normal forms agree.  It does not fail when it cannot
-close the goal. -/
+/-- `ra_normalise` normalizes both sides of an `=` or `≤` goal and attempts structural
+inclusion checking. It leaves any unresolved goal for further proof. -/
 syntax (name := ra_normalise) "ra_normalise" : tactic
 
 elab_rules : tactic
   | `(tactic| ra_normalise) => rewriteBoth "ra_normalise" ``RaTerm.norm ``RaTerm.eval_norm
 
-/-- `ra_simpl` cleans up both sides of an `=` or `≤` goal: it removes units and zeros,
-simplifies `0∗`, `1∗` and `a∗∗`, and pushes converses to the leaves, without sorting sums or
-distributing composition over union. -/
+/-- `ra_simpl` cleans up both sides of an `=` or `≤` goal: units, zeros, basic star laws,
+converse, Boolean simplification and residual units, without sorting or distribution. -/
 syntax (name := ra_simpl) "ra_simpl" : tactic
 
 elab_rules : tactic
@@ -345,7 +361,7 @@ variable {K : Type*} [RelationAlgebra K] (a b : K)
 -- an abstract relation algebra provides the converse through `RelationAlgebra.toStarRing`
 example : star (a * b) * 1 = star b * star a := by ra
 
--- operations outside the syntax (here `⊓`) are treated as opaque atoms
+-- Boolean operations are normalized by the proved-rewrite extension.
 example : (a ⊓ b) * 1 + 0 = a ⊓ b := by ra
 
 end Abstract

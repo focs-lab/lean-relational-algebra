@@ -82,3 +82,4 @@ import RelationAlgebra.Examples.ConverseUntyping
 import RelationAlgebra.Examples.TypedRa
 import RelationAlgebra.Examples.TypedResidual
 import RelationAlgebra.Examples.MatrixResidual
+import RelationAlgebra.Examples.FullRa
