@@ -2,7 +2,7 @@
 
 Prove equations between programs and relations using **Kleene algebra (KA)** and
 **Kleene algebra with tests (KAT)**. This library provides algebraic laws, relational and
-matrix models, Hoare rules, and the `ka`, `kat`, and `hkat` tactics, built on Mathlib.
+matrix models, Hoare rules, and the `ka`, `kat`, `hkat`, and `ra` tactics, built on Mathlib.
 
 The project is inspired by **Damien Pous's
 [relation-algebra library for Rocq/Coq](https://github.com/damien-pous/relation-algebra)**.
@@ -13,8 +13,9 @@ for this Lean development. See [credits and references](#credits-and-references)
 `hkat` all work in **any** Kleene algebra, because Kozen's completeness theorem and the
 untyped Kozen–Smith completeness theorem for KAT are both proved here. `hkat` additionally
 uses Hoare-style hypotheses from the context. Both `kat` and `hkat` handle typed categorical
-goals, where programs can have different source and target objects. `ra` handles the Kleene
-fragment with converse in both untyped and typed models. See [tactic support](#tactic-support) before choosing a model.
+goals, where programs can have different source and target objects. `ra` handles structural
+laws for composition, converse, Boolean operations, and residuals in both untyped and typed
+models. See [tactic support](#tactic-support) before choosing a model.
 
 ## Get started
 
@@ -66,6 +67,7 @@ More examples: [algebra and relations](RelationAlgebra/Examples/Basic.lean) ·
 [using the tactics](RelationAlgebra/Examples/Decide.lean) ·
 [typed goals](RelationAlgebra/Examples/TypedDecide.lean) ·
 [typed converse](RelationAlgebra/Examples/TypedRa.lean) ·
+[Boolean and residual reasoning](RelationAlgebra/Examples/FullRa.lean) ·
 [Paterson’s flowchart equivalence](RelationAlgebra/Examples/Paterson.lean).
 
 <details>
@@ -77,12 +79,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "b8e31a71315dc12a1ea673e1c073b9549d5ad8a2"
+rev = "4e19f7fbfe45d4bb188832c1a3de1f44c0d86007"
 ```
 
-This pins the library to a revision with typed `kat`/`hkat`/`ra`, KA/KAT completeness,
-algebraic untyping with tests or converse, the free typed KAT with its universal property,
-and Paterson’s flowchart equivalence.
+This pins the library to a revision with typed Boolean relation algebra, matrix residuals,
+and the extended `ra` tactics, alongside the KA/KAT completeness and program proofs.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -102,6 +103,8 @@ For relations `R S : SetRel α α` and a test `b : Set α`:
 | `⌜b⌝` | Identity restricted to states satisfying `b` |
 | `bᶜ` | Negation of the test |
 | `star R` | Converse: reverse every pair in `R` |
+| `R ⊓ S`, `Rᶜ`, `⊤` | Intersection, relation complement, universal relation |
+| `R ⇘ S`, `S ⇙ R` | Left and right residuals; enable `open scoped RelationAlgebra` |
 
 `open scoped Computability` enables `∗`; `KAT` enables `⌜b⌝`; `SetRel` selects the
 relational algebra instances. The last scope matters because relations are represented as
@@ -119,11 +122,11 @@ from `b` ends in `c`. It is defined by `⌜b⌝ * p * ⌜cᶜ⌝ = 0`.
 | `kat` | Equalities, inequalities, and `KAT.HoareTriple` | KA operations, embedded Boolean tests, `ifThenElse`, `whileDo` |
 | `kat` on typed goals | Equalities, inequalities, and `TypedKAT.HoareTriple` | `⊥`, `𝟙`, `⊔`, `≫`, `∗`, typed tests and guarded commands |
 | `hkat` | Untyped or typed goals, using Hoare-style hypotheses from the context | The same operations as `kat` |
-| `ra`, `ra_normalise`, `ra_simpl` | Untyped or typed equalities and inequalities | KA operations and converse |
+| `ra`, `ra_normalise`, `ra_simpl` | Untyped or typed equalities and inequalities | KA operations, converse, `⊓`, `ᶜ`, `⊤`, `\`, `⇨`, and residuals |
 
 `ka` proves identities in any Kleene algebra. `kat` adds Boolean tests and also supports
 typed composition. `hkat` adds reasoning from hypotheses at one or several objects.
-`ra` normalises expressions with converse.
+`ra` normalises expressions and checks structural inclusions.
 
 `ka` requires only `[KleeneAlgebra K]`. It is sound in every Kleene algebra because
 **Kozen's completeness theorem** is proved in
@@ -145,13 +148,19 @@ They require `[Category C] [KleeneCategory C]` and, when tests occur, `[TypedKAT
 with `[∀ X, BooleanAlgebra (T X)]`. See [typed identities](RelationAlgebra/Examples/TypedDecide.lean)
 and [typed hypothesis examples](RelationAlgebra/Examples/TypedHypotheses.lean).
 
-Untyped `ra` requires `[KleeneAlgebra K] [StarRing K]`, which a `RelationAlgebra` instance
-supplies. Typed `ra` requires `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]`.
-`ra_normalise` leaves both sides in normal form; `ra_simpl` performs lighter cleanup without
-distributing products or sorting unions. Both leave any remaining goal for further proof.
+For the Kleene-with-converse fragment, `ra` requires `[KleeneAlgebra K] [StarRing K]`,
+or `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]` for typed goals.
+Boolean and residual rules use the corresponding interfaces: `RelationAlgebra K` supplies
+all untyped operations; typed relation algebra combines `BooleanKleeneCategory`,
+`KleeneCategoryWithConverse`, and `RelationCategory`. Residual-only goals also work with
+`ResiduatedKleeneAlgebra` or `ResiduatedKleeneCategory`, without Boolean structure or converse.
 
-Three guarantees are worth keeping apart. *Accepting-checker soundness* is proved for all four
-tactics: if the checker accepts, the goal holds. *Algebraic completeness* is proved for Kleene
+`ra_normalise` simplifies both sides and tries structural inclusion rules. `ra_simpl`
+performs lighter cleanup without distributing products or sorting joins and meets.
+Both leave any remaining goal for further proof. See
+[worked examples](RelationAlgebra/Examples/FullRa.lean).
+
+Every successful tactic produces a kernel-checked proof. *Algebraic completeness* is proved for Kleene
 algebra and for both untyped and typed KAT. *Search completeness* is proved for none of them.
 
 `ka`, `kat` and `hkat` search for bisimulation certificates using derivatives, and Lean's
@@ -160,7 +169,9 @@ kernel checks the resulting proofs. Search uses **1,000 units of fuel** by defau
 `2^k` Boolean assignments (for typed goals, `k` is the largest test count at any object).
 Adding tests can be expensive: the four-test example in
 [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) needs `hkat 500000` and
-about a minute. `ra` does not search at all; it normalises both sides and compares.
+about a minute. The Boolean/residual extension of `ra` uses up to 16 normalization passes
+and a structural check bounded to 4,096 rule attempts. These bounds are separate from the
+derivative search fuel.
 
 Keep these limits in mind:
 
@@ -173,9 +184,10 @@ Keep these limits in mind:
 - `hkat` accepts Hoare triples, zero constraints, Boolean equalities and inequalities, and
   supported guarded action constraints. Arbitrary action equations are not supported.
   Soundness of elimination is proved; Hardin–Kozen completeness is not.
-- `ra` covers `0`, `1`, `+`, `*`, `∗` and converse. It treats `⊓`, `ᶜ`, `⊤` and residuals as
-  opaque atoms, and it is a normaliser rather than a decision procedure, so it is incomplete
-  by design, as upstream's is.
+- `ra` is incomplete: it uses structural laws, Boolean simplification, residual adjunctions
+  and variance, and Dedekind/modular inequalities. It does not decide all relation-algebra
+  identities. The Boolean/residual extension uses proved rewrites directly; the existing
+  expression syntax and untyping theorem still cover only KA with converse.
 
 The tactics apply to abstract KATs, not just to concrete models:
 
@@ -263,6 +275,26 @@ inequality counterpart transport universally valid untyped laws with converse to
 models, without finiteness or continuity assumptions. See the
 [untyping examples](RelationAlgebra/Examples/ConverseUntyping.lean).
 
+Residuals retain their endpoints. For `f : X ⟶ Y` and `h : X ⟶ Z`, `f ⇘ h : Y ⟶ Z`
+is the greatest `g` such that `f ≫ g ≤ h`; dually, `h ⇙ g : X ⟶ Y` is the greatest such
+`f`. Open `ResiduatedKleeneCategory` for the typed notation:
+
+```lean
+open scoped ResiduatedKleeneCategory
+
+example {C : Type*} [Category C] [KleeneCategory C] [ResiduatedKleeneCategory C]
+    {X Y Z : C} (f : X ⟶ Y) (h : X ⟶ Z) : f ≫ (f ⇘ h) ≤ h := by
+  ra
+```
+
+`RelCat` supplies Boolean operations and both residuals. Relation complement is taken
+inside the universal relation between the two objects; KAT test complement is relative to
+an object's identity. For rectangular matrices, `Matrix.lres` and `Matrix.rres` take finite
+meets of scalar residuals, requiring `[ResiduatedKleeneLattice K]`. They also supply the
+residuals on `Matrix.Mat K`; empty dimensions produce top entries. See
+[typed interfaces](RelationAlgebra/Examples/TypedResidual.lean) and
+[matrix examples](RelationAlgebra/Examples/MatrixResidual.lean).
+
 For guarded-string semantics, `TypedKAT.LanguageCat src tgt k` is a typed KAT with atoms
 of length `k`, over an arbitrary object alphabet. Use `LanguageCat.Tests X` for tests at
 object `X`, and `testVarAt X i` for a primitive test. `Term.eval_languageCat` proves that
@@ -300,12 +332,13 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Expressions modulo the KAT laws and their universal property | [TypedKAT/Free](RelationAlgebra/TypedKAT/Free.lean), [semantic relations](RelationAlgebra/TypedKAT/Semantics.lean), [homomorphisms](RelationAlgebra/TypedKAT/Hom.lean), [examples](RelationAlgebra/Examples/FreeKAT.lean) |
 | Tactics, derivatives, and soundness proofs | [Decide](RelationAlgebra/Decide) |
 | Hoare hypotheses and the `hkat` tactic | [KAT/Hypotheses](RelationAlgebra/KAT/Hypotheses.lean), [typed hypotheses](RelationAlgebra/TypedKAT/Hypotheses.lean), [Decide/HKATTactic](RelationAlgebra/Decide/HKATTactic.lean) |
-| Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
+| Normalisation and the `ra` tactics | [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean), [Kleene core](RelationAlgebra/Decide/Normalise.lean), [Boolean/residual extension](RelationAlgebra/Decide/FullRATactic.lean) |
 | Automata and Kozen's completeness proof | [Automata](RelationAlgebra/Automata), [Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean) |
 | Kozen–Smith completeness for KAT (untyped) | [KATCompleteness](RelationAlgebra/KATCompleteness) |
 | Typed KAT completeness and reflection | [TypedKATCompleteness](RelationAlgebra/TypedKATCompleteness) |
 | Reusing untyped laws in typed models | [KAT untyping](RelationAlgebra/TypedKAT/Untyping.lean), [converse untyping](RelationAlgebra/TypedRA/Untyping.lean) |
-| Typed converse and its models | [TypedConverse](RelationAlgebra/TypedConverse.lean), [tactic examples](RelationAlgebra/Examples/TypedRa.lean) |
+| Typed converse, Boolean relation algebra, and residuals | [TypedConverse](RelationAlgebra/TypedConverse.lean), [TypedBoolean](RelationAlgebra/TypedBoolean.lean), [TypedResiduated](RelationAlgebra/TypedResiduated.lean) |
+| Rectangular matrix residuals and relation algebra | [Models/MatrixResidual](RelationAlgebra/Models/MatrixResidual.lean), [examples](RelationAlgebra/Examples/MatrixResidual.lean) |
 | The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
 | Paterson’s S6A = S6E flowchart equivalence | [Examples/Paterson](RelationAlgebra/Examples/Paterson.lean), [schemes](RelationAlgebra/Examples/Paterson/Programs.lean), [regressions](RelationAlgebra/Examples/Paterson/Regression.lean) |
@@ -327,19 +360,12 @@ that the programs terminate. Import `RelationAlgebra.Examples.Paterson` for this
 
 ## Next steps
 
-KA completeness and untyped KAT completeness are done, so `ka`, `kat` and `hkat` all work in
-arbitrary Kleene algebras. Typed expressions and their guarded-string semantics are now
-available, with completeness proved for arbitrary typed KATs: composition checks endpoints,
-tests have an interpretation at each object, and only endomorphisms can be iterated.
-`kat` reifies typed goals directly, `hkat` uses hypotheses across objects, and the algebraic
-untyping interface transports universally valid untyped laws to typed models. Both the
-guarded-string language model and the expression quotient are now bundled as typed KATs,
-with the free model's universal property proved. Paterson's flowchart equivalence is also
-mechanized. Typed converse, its untyping theorem, and typed `ra` are available too.
-Next are typed residual and Boolean relation-algebra interfaces, matrix residuals, and
-extending `ra` beyond the Kleene fragment.
-[PORTING.md](PORTING.md) has the
-dependency-ordered plan and an exact continuation point.
+Typed Boolean relation algebra, typed and matrix residuals, and the Boolean/residual
+extension of `ra` are available. Remaining milestones include strict iteration (`x⁺`),
+the categorical finite/setoid-relation and general trace models, the points/atoms theory,
+and upstream's untyping results for weaker structures. Search completeness and a free
+expression model for the full relation-algebra syntax remain open.
+[PORTING.md](PORTING.md) tracks the gaps and their dependencies.
 
 ## Credits and references
 
@@ -348,8 +374,9 @@ dependency-ordered plan and an exact continuation point.
 credit for the Rocq/Coq development that motivates this project: its treatment of tests and
 typed algebras, and its use of derivatives and reflection for automated proofs.
 Its [documentation](https://perso.ens-lyon.fr/damien.pous/ra/) is a valuable companion.
-That library goes further than this one in several respects: its `ra` covers the whole
-lattice and residual syntax, and its structures are typed throughout.
+That library goes further in its hierarchy of weaker structures, strict iteration, and
+several heterogeneous models. Our Boolean/residual normalization and partial inclusion
+checker follow its approach, without claiming identical algorithms or coverage.
 [PORTING.md](PORTING.md) records the gaps module by module.
 
 We also build on the work of the **[Lean](https://github.com/leanprover/lean4)** and
