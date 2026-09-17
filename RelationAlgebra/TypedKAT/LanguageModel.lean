@@ -9,8 +9,9 @@ does not conflict with any category already defined on that type. Tests are sets
 of length `k`, embedded as languages containing only those single atoms.
 
 This is a model of all well-typed guarded-string languages at a fixed atom bound. The free
-model of expressions modulo semantic equivalence and its universal property are separate
-constructions. The model follows `glang.v` in Damien Pous' `relation-algebra` library.
+model of expressions modulo semantic equivalence and its universal property are developed
+separately in `TypedKAT/Free.lean`. The model follows `glang.v` in Damien Pous'
+`relation-algebra` library.
 -/
 
 open CategoryTheory

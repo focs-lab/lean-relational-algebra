@@ -20,8 +20,9 @@ entry. The universe maxima in the hypothesis account for those matrices and thei
 of tests; they impose no smallness assumption on the object alphabet or semantic category.
 
 This supplies the transport direction of the KAT untyping interface in Damien Pous's
-`relation-algebra` (`theories/kat_untyping.v`). Free-model and equivalence-relation packaging
-are separate from this evaluation interface.
+`relation-algebra` (`theories/kat_untyping.v`). `TypedKAT/Semantics.lean` packages erasure
+preservation and reflection on semantic equality/order; `TypedKAT/Free.lean` constructs
+the expression quotient and proves its universal property.
 -/
 
 open CategoryTheory KleeneCategory

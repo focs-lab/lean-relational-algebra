@@ -75,11 +75,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "a76296f36583d023da716e90055f582affd96cd7"
+rev = "d41bcb90f4580479a550f41b7c72ed5ac5a04392"
 ```
 
-This pins the library to a revision with typed `kat`, KA/KAT completeness, and algebraic
-untyping.
+This pins the library to a revision with typed `kat`/`hkat`, KA/KAT completeness, algebraic
+untyping, and the free typed KAT with its universal property.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -243,6 +243,17 @@ object `X`, and `testVarAt X i` for a primitive test. `Term.eval_languageCat` pr
 canonical interpretation agrees with `Term.lang`. See the
 [language-model examples](RelationAlgebra/Examples/LanguageModel.lean).
 
+For expressions modulo the KAT laws, use `TypedKAT.FreeCat src tgt`. Its morphisms are
+classes of typed expressions, and `FreeCat.Tests X` is the free Boolean algebra of tests at
+`X`. Equality and order compare guarded-string languages at every atom bound, so there is
+no fixed limit on test variable indices.
+
+`FreeCat.lift o τ ρ` interprets this free model in any typed KAT. Supply an object map `o`,
+independent test valuations `τ` at each object, and actions `ρ` with matching endpoints.
+`FreeCat.existsUnique_lift` proves that this interpretation is the **unique typed KAT
+homomorphism** extending those assignments. See the
+[free-model examples](RelationAlgebra/Examples/FreeKAT.lean).
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -260,6 +271,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](RelationAlgebra/Typed.lean), [TypedKAT](RelationAlgebra/TypedKAT.lean) |
 | Typed expressions and guarded-string semantics | [TypedKAT/Syntax](RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](RelationAlgebra/TypedKAT/GuardedString.lean), [examples](RelationAlgebra/Examples/TypedSyntax.lean) |
 | Guarded-string languages as a typed KAT model | [TypedKAT/LanguageModel](RelationAlgebra/TypedKAT/LanguageModel.lean), [examples](RelationAlgebra/Examples/LanguageModel.lean) |
+| Expressions modulo the KAT laws and their universal property | [TypedKAT/Free](RelationAlgebra/TypedKAT/Free.lean), [semantic relations](RelationAlgebra/TypedKAT/Semantics.lean), [homomorphisms](RelationAlgebra/TypedKAT/Hom.lean), [examples](RelationAlgebra/Examples/FreeKAT.lean) |
 | Tactics, derivatives, and soundness proofs | [Decide](RelationAlgebra/Decide) |
 | Hoare hypotheses and the `hkat` tactic | [KAT/Hypotheses](RelationAlgebra/KAT/Hypotheses.lean), [typed hypotheses](RelationAlgebra/TypedKAT/Hypotheses.lean), [Decide/HKATTactic](RelationAlgebra/Decide/HKATTactic.lean) |
 | Normalisation and the `ra` tactics | [Decide/Normalise](RelationAlgebra/Decide/Normalise.lean), [Decide/RaTactic](RelationAlgebra/Decide/RaTactic.lean) |
@@ -285,10 +297,10 @@ arbitrary Kleene algebras. Typed expressions and their guarded-string semantics 
 available, with completeness proved for arbitrary typed KATs: composition checks endpoints,
 tests have an interpretation at each object, and only endomorphisms can be iterated.
 `kat` reifies typed goals directly, `hkat` uses hypotheses across objects, and the algebraic
-untyping interface transports universally valid untyped laws to typed models. The next
-priority is the typed expression quotient and its universal property; the guarded-string
-language model is now bundled as a typed KAT. Further work
-includes extending `ra` beyond the Kleene fragment and proving Paterson's flowchart equivalence.
+untyping interface transports universally valid untyped laws to typed models. Both the
+guarded-string language model and the expression quotient are now bundled as typed KATs,
+with the free model's universal property proved. Next are Paterson's flowchart equivalence,
+typed converse and residual interfaces, and extending `ra` beyond the Kleene fragment.
 [PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
 
