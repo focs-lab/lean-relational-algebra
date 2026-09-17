@@ -38,6 +38,7 @@ import RelationAlgebra.Models.MatrixResidual
 import RelationAlgebra.Models.MatrixIteration
 import RelationAlgebra.Models.SetoidRel
 import RelationAlgebra.Models.FinRel
+import RelationAlgebra.Models.FinRelCategory
 import RelationAlgebra.Automata.ZeroOne
 import RelationAlgebra.Automata.Defs
 import RelationAlgebra.Automata.Det
@@ -87,3 +88,4 @@ import RelationAlgebra.Examples.TypedResidual
 import RelationAlgebra.Examples.MatrixResidual
 import RelationAlgebra.Examples.FullRa
 import RelationAlgebra.Examples.Iteration
+import RelationAlgebra.Examples.FiniteRelations
