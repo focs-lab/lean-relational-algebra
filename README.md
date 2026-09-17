@@ -79,11 +79,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "8984c3f8d321a0046070c9b6eed1a29f7d8949af"
+rev = "e5610b71a802c422253f42c8c9d1499fac0b5c14"
 ```
 
-This pins the library to a revision with strict iteration, typed laws and tactic support,
-alongside the existing KA/KAT completeness and relation-algebra development.
+This pins the library to a revision with finite-relation and setoid-relation categories,
+general typed traces, and the existing KA/KAT completeness, tactics and strict iteration.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -339,6 +339,22 @@ independent test valuations `τ` at each object, and actions `ρ` with matching 
 homomorphism** extending those assignments. See the
 [free-model examples](RelationAlgebra/Examples/FreeKAT.lean).
 
+## Concrete typed models
+
+| Model | Use it for | Examples |
+| --- | --- | --- |
+| `FinRelCat` | Computable relations between finite types; Boolean tests, converse, star and residuals | [Finite relations](RelationAlgebra/Examples/FiniteRelations.lean) |
+| `SetoidRelCat` | Relations respecting equivalences on two state spaces; identity is equivalence, tests are subsets of the quotient | [Setoid relations](RelationAlgebra/Examples/SetoidRelations.lean) |
+| `TraceCat σ src tgt` | Trace languages over arbitrary shared states `σ`, with action endpoints specified by `src` and `tgt` | [Typed traces](RelationAlgebra/Examples/TypedTraces.lean) |
+
+The first two models have faithful typed KAT interpretations in `RelCat`, with an order
+isomorphism on every hom-set. For setoids, the interpretation uses quotient types.
+
+Trace composition checks both action types and equality of the shared boundary state.
+Top, complement and residuals range only over well-typed traces. Forgetting types preserves
+composition, tests and iteration; it need not preserve top or complement. This general
+trace model has no atom bound and does not require finite states or actions.
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -352,7 +368,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Quantale constructions and complete KAs | [Kleene/Quantale](RelationAlgebra/Kleene/Quantale.lean), [Kleene/Complete](RelationAlgebra/Kleene/Complete.lean) |
 | Tests, guarded commands, and partial-correctness rules | [KAT/Defs](RelationAlgebra/KAT/Defs.lean), [KAT/Basic](RelationAlgebra/KAT/Basic.lean), [KAT/Hoare](RelationAlgebra/KAT/Hoare.lean) |
 | Relations and finite matrices | [Models/Rel](RelationAlgebra/Models/Rel.lean), [Models/Matrix](RelationAlgebra/Models/Matrix.lean), [Models/MatrixExt](RelationAlgebra/Models/MatrixExt.lean) |
-| Traces, guarded strings, setoid and finite relations | [Models/Trace](RelationAlgebra/Models/Trace.lean), [Models/SetoidRel](RelationAlgebra/Models/SetoidRel.lean), [Models/FinRel](RelationAlgebra/Models/FinRel.lean) |
+| Traces, guarded strings, setoid and finite relations | [Models/Trace](RelationAlgebra/Models/Trace.lean), [Models/TypedTrace](RelationAlgebra/Models/TypedTrace.lean), [Models/SetoidRelCategory](RelationAlgebra/Models/SetoidRelCategory.lean), [Models/FinRelCategory](RelationAlgebra/Models/FinRelCategory.lean) |
 | Converse, relation algebra, residuals, allegories, vectors and points | [Converse](RelationAlgebra/Converse.lean), [Residuated](RelationAlgebra/Residuated.lean), [Allegory](RelationAlgebra/Allegory.lean), [Vectors](RelationAlgebra/Vectors.lean) |
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](RelationAlgebra/Typed.lean), [TypedKAT](RelationAlgebra/TypedKAT.lean) |
 | Typed expressions and guarded-string semantics | [TypedKAT/Syntax](RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](RelationAlgebra/TypedKAT/GuardedString.lean), [examples](RelationAlgebra/Examples/TypedSyntax.lean) |
@@ -390,8 +406,8 @@ that the programs terminate. Import `RelationAlgebra.Examples.Paterson` for this
 
 Typed Boolean relation algebra, typed and matrix residuals, and the Boolean/residual
 extension of `ra` are available, as is strict iteration (`x⁺`) with typed laws and tactic
-support. Remaining milestones include categorical finite/setoid-relation and general trace
-models, the points/atoms theory,
+support. Finite and setoid relation categories and general typed traces are also available.
+Remaining milestones include typed allegories and predicates, the points/atoms theory,
 and upstream's untyping results for weaker structures. Search completeness and a free
 expression model for the full relation-algebra syntax remain open.
 [PORTING.md](PORTING.md) tracks the gaps and their dependencies.
@@ -403,8 +419,8 @@ expression model for the full relation-algebra syntax remain open.
 credit for the Rocq/Coq development that motivates this project: its treatment of tests and
 typed algebras, and its use of derivatives and reflection for automated proofs.
 Its [documentation](https://perso.ens-lyon.fr/damien.pous/ra/) is a valuable companion.
-That library goes further in its hierarchy of weaker structures and several heterogeneous
-models. Our Boolean/residual normalization and partial inclusion
+That library goes further in its hierarchy of weaker structures and parts of its
+relation-algebra theory. Christian Doczkal developed the upstream finite-relation model. Our Boolean/residual normalization and partial inclusion
 checker follow its approach, without claiming identical algorithms or coverage.
 [PORTING.md](PORTING.md) records the gaps module by module.
 
