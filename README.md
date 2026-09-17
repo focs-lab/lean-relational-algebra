@@ -79,11 +79,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "4e19f7fbfe45d4bb188832c1a3de1f44c0d86007"
+rev = "8984c3f8d321a0046070c9b6eed1a29f7d8949af"
 ```
 
-This pins the library to a revision with typed Boolean relation algebra, matrix residuals,
-and the extended `ra` tactics, alongside the KA/KAT completeness and program proofs.
+This pins the library to a revision with strict iteration, typed laws and tactic support,
+alongside the existing KA/KAT completeness and relation-algebra development.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -99,6 +99,7 @@ For relations `R S : SetRel α α` and a test `b : Set α`:
 | `R * S` | Sequential composition: first `R`, then `S` |
 | `0`, `1` | Empty relation, identity relation |
 | `R∗` | Zero or more steps of `R` (reflexive-transitive closure) |
+| `R⁺` | One or more steps of `R` (transitive closure) |
 | `R ≤ S` | Relation inclusion |
 | `⌜b⌝` | Identity restricted to states satisfying `b` |
 | `bᶜ` | Negation of the test |
@@ -106,7 +107,7 @@ For relations `R S : SetRel α α` and a test `b : Set α`:
 | `R ⊓ S`, `Rᶜ`, `⊤` | Intersection, relation complement, universal relation |
 | `R ⇘ S`, `S ⇙ R` | Left and right residuals; enable `open scoped RelationAlgebra` |
 
-`open scoped Computability` enables `∗`; `KAT` enables `⌜b⌝`; `SetRel` selects the
+`open scoped Computability` enables `∗` and `⁺`; `KAT` enables `⌜b⌝`; `SetRel` selects the
 relational algebra instances. The last scope matters because relations are represented as
 sets, which can also carry Mathlib's pointwise operations.
 
@@ -118,9 +119,9 @@ from `b` ends in `c`. It is defined by `⌜b⌝ * p * ⌜cᶜ⌝ = 0`.
 
 | Tactic | Goals | Operations understood |
 | --- | --- | --- |
-| `ka` | Equalities and inequalities | `0`, `1`, `+`, `*`, `∗` |
+| `ka` | Equalities and inequalities | `0`, `1`, `+`, `*`, `∗`, `⁺` |
 | `kat` | Equalities, inequalities, and `KAT.HoareTriple` | KA operations, embedded Boolean tests, `ifThenElse`, `whileDo` |
-| `kat` on typed goals | Equalities, inequalities, and `TypedKAT.HoareTriple` | `⊥`, `𝟙`, `⊔`, `≫`, `∗`, typed tests and guarded commands |
+| `kat` on typed goals | Equalities, inequalities, and `TypedKAT.HoareTriple` | `⊥`, `𝟙`, `⊔`, `≫`, `∗`, `⁺`, typed tests and guarded commands |
 | `hkat` | Untyped or typed goals, using Hoare-style hypotheses from the context | The same operations as `kat` |
 | `ra`, `ra_normalise`, `ra_simpl` | Untyped or typed equalities and inequalities | KA operations, converse, `⊓`, `ᶜ`, `⊤`, `\`, `⇨`, and residuals |
 
@@ -159,6 +160,11 @@ all untyped operations; typed relation algebra combines `BooleanKleeneCategory`,
 performs lighter cleanup without distributing products or sorting joins and meets.
 Both leave any remaining goal for further proof. See
 [worked examples](RelationAlgebra/Examples/FullRa.lean).
+
+All six commands accept strict iteration. They expand `a⁺` to `a * a∗` (typed:
+`f ≫ f∗`) by proved rewrites before reification. `hkat` expands it in hypotheses too;
+the `ra` commands first simplify constants, nested iterations and converse. The checker
+syntax and its soundness assumptions are unchanged.
 
 Every successful tactic produces a kernel-checked proof. *Algebraic completeness* is proved for Kleene
 algebra and for both untyped and typed KAT. *Search completeness* is proved for none of them.
@@ -213,6 +219,27 @@ example {T K : Type*} [BooleanAlgebra T] [KleeneAlgebra K] [KAT T K]
     KAT.HoareTriple i (KAT.whileDo b p) (bᶜ ⊓ i) :=
   KAT.HoareTriple.whileDo h
 ```
+
+## One or more steps
+
+Strict iteration is a derived operation: `a⁺ = a * a∗ = a∗ * a`. It needs no additional
+axioms. Star permits zero steps; strict iteration requires at least one. A nonempty cycle
+can still relate a state to itself.
+
+```lean
+import RelationAlgebra
+open scoped Computability
+
+example {K : Type*} [KleeneAlgebra K] (a : K) : a⁺ = a + a * a⁺ := by ka
+example {K : Type*} [KleeneAlgebra K] (a b : K) : a * (b * a)⁺ = (a * b)⁺ * a := by ka
+```
+
+For typed morphisms, `f⁺` is available only when `f : X ⟶ X`; the induction and sliding
+laws still allow rectangular contexts. Relational membership is exactly `Relation.TransGen`,
+and `Matrix.ofRel_kplus` proves the same nonempty-path semantics for zero-one matrices.
+See [the laws](RelationAlgebra/Kleene/Iteration.lean),
+[typed laws](RelationAlgebra/TypedIteration.lean), and
+[examples](RelationAlgebra/Examples/Iteration.lean).
 
 ## Programs with different source and target types
 
@@ -321,6 +348,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | To work with… | Start here |
 | --- | --- |
 | Sliding, denesting, bisimulation, and least fixed points | [Kleene/Basic](RelationAlgebra/Kleene/Basic.lean) |
+| Strict iteration and nonempty paths | [Kleene/Iteration](RelationAlgebra/Kleene/Iteration.lean), [TypedIteration](RelationAlgebra/TypedIteration.lean), [MatrixIteration](RelationAlgebra/Models/MatrixIteration.lean) |
 | Quantale constructions and complete KAs | [Kleene/Quantale](RelationAlgebra/Kleene/Quantale.lean), [Kleene/Complete](RelationAlgebra/Kleene/Complete.lean) |
 | Tests, guarded commands, and partial-correctness rules | [KAT/Defs](RelationAlgebra/KAT/Defs.lean), [KAT/Basic](RelationAlgebra/KAT/Basic.lean), [KAT/Hoare](RelationAlgebra/KAT/Hoare.lean) |
 | Relations and finite matrices | [Models/Rel](RelationAlgebra/Models/Rel.lean), [Models/Matrix](RelationAlgebra/Models/Matrix.lean), [Models/MatrixExt](RelationAlgebra/Models/MatrixExt.lean) |
@@ -361,8 +389,9 @@ that the programs terminate. Import `RelationAlgebra.Examples.Paterson` for this
 ## Next steps
 
 Typed Boolean relation algebra, typed and matrix residuals, and the Boolean/residual
-extension of `ra` are available. Remaining milestones include strict iteration (`x⁺`),
-the categorical finite/setoid-relation and general trace models, the points/atoms theory,
+extension of `ra` are available, as is strict iteration (`x⁺`) with typed laws and tactic
+support. Remaining milestones include categorical finite/setoid-relation and general trace
+models, the points/atoms theory,
 and upstream's untyping results for weaker structures. Search completeness and a free
 expression model for the full relation-algebra syntax remain open.
 [PORTING.md](PORTING.md) tracks the gaps and their dependencies.
@@ -374,8 +403,8 @@ expression model for the full relation-algebra syntax remain open.
 credit for the Rocq/Coq development that motivates this project: its treatment of tests and
 typed algebras, and its use of derivatives and reflection for automated proofs.
 Its [documentation](https://perso.ens-lyon.fr/damien.pous/ra/) is a valuable companion.
-That library goes further in its hierarchy of weaker structures, strict iteration, and
-several heterogeneous models. Our Boolean/residual normalization and partial inclusion
+That library goes further in its hierarchy of weaker structures and several heterogeneous
+models. Our Boolean/residual normalization and partial inclusion
 checker follow its approach, without claiming identical algorithms or coverage.
 [PORTING.md](PORTING.md) records the gaps module by module.
 
