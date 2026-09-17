@@ -11,6 +11,8 @@ import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedConverse
+import RelationAlgebra.TypedBoolean
+import RelationAlgebra.TypedResiduated
 import RelationAlgebra.TypedRA.Syntax
 import RelationAlgebra.TypedRA.Matrix
 import RelationAlgebra.TypedRA.Support
@@ -77,3 +79,4 @@ import RelationAlgebra.Examples.Paterson.Regression
 import RelationAlgebra.Examples.TypedConverse
 import RelationAlgebra.Examples.ConverseUntyping
 import RelationAlgebra.Examples.TypedRa
+import RelationAlgebra.Examples.TypedResidual

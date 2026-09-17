@@ -343,3 +343,79 @@ scoped instance instResiduatedKleeneAlgebra : ResiduatedKleeneAlgebra (SetRel α
 @[simp] theorem mem_rdiv : a ~[S ⇙ R] b ↔ ∀ c, b ~[R] c → a ~[S] c := Iff.rfl
 
 end SetRel
+
+/-! ### Residuation with finite meets -/
+
+/-- A residuated Kleene algebra with finite meets (including the empty meet).
+The inherited structures share one order. No distributivity of the lattice, Boolean
+complement, converse, or completeness assumption is needed for matrix residuals. -/
+class ResiduatedKleeneLattice (K : Type*) extends ResiduatedKleeneAlgebra K, Lattice K,
+    Top K where
+  le_top : ∀ x : K, x ≤ ⊤
+
+instance (priority := 100) ResiduatedKleeneLattice.toOrderTop {K : Type*}
+    [h : ResiduatedKleeneLattice K] : OrderTop K where
+  le_top := h.le_top
+
+/-- Boolean relation algebras provide the finite meets needed for matrix residuals. -/
+noncomputable instance (priority := 100) RelationAlgebra.toResiduatedKleeneLattice
+    {K : Type*} [RelationAlgebra K] : ResiduatedKleeneLattice K where
+  __ := (inferInstance : KleeneAlgebra K)
+  __ := ResiduatedIdemSemiring.ofRelationAlgebra K
+  __ := (inferInstance : Lattice K)
+  __ := (inferInstance : Top K)
+  le_top _ := _root_.le_top
+
+namespace ResiduatedKleeneLattice
+
+open ResiduatedIdemSemiring
+variable {K : Type*} [ResiduatedKleeneLattice K] (a b c : K)
+
+@[simp] theorem kstar_top : (⊤ : K)∗ = ⊤ := le_antisymm _root_.le_top le_kstar
+
+@[simp] theorem zero_ldiv : (0 : K) ⇘ c = ⊤ := top_unique (le_zero_ldiv ⊤ c)
+@[simp] theorem rdiv_zero : c ⇙ (0 : K) = ⊤ := top_unique (le_rdiv_zero ⊤ c)
+@[simp] theorem ldiv_top : a ⇘ (⊤ : K) = ⊤ := top_unique ((ldiv_spec _ _ _).mpr _root_.le_top)
+@[simp] theorem top_rdiv : (⊤ : K) ⇙ a = ⊤ := top_unique ((rdiv_spec _ _ _).mpr _root_.le_top)
+
+theorem sup_ldiv : (a ⊔ b) ⇘ c = (a ⇘ c) ⊓ (b ⇘ c) := by
+  apply eq_of_forall_le_iff
+  intro d
+  rw [← add_eq_sup, add_ldiv_le_iff, le_inf_iff]
+
+theorem ldiv_inf : a ⇘ (b ⊓ c) = (a ⇘ b) ⊓ (a ⇘ c) := by
+  apply eq_of_forall_le_iff
+  intro d
+  rw [le_inf_iff, ldiv_spec, ldiv_spec, ldiv_spec, le_inf_iff]
+
+theorem rdiv_sup : a ⇙ (b ⊔ c) = (a ⇙ b) ⊓ (a ⇙ c) := by
+  apply eq_of_forall_le_iff
+  intro d
+  rw [← add_eq_sup, rdiv_add_le_iff, le_inf_iff]
+
+theorem inf_rdiv : (a ⊓ b) ⇙ c = (a ⇙ c) ⊓ (b ⇙ c) := by
+  apply eq_of_forall_le_iff
+  intro d
+  rw [le_inf_iff, rdiv_spec, rdiv_spec, rdiv_spec, le_inf_iff]
+
+end ResiduatedKleeneLattice
+
+namespace ResiduatedKleeneAlgebra
+
+variable {K : Type*} [ResiduatedKleeneAlgebra K] [StarRing K] (a b : K)
+
+@[simp] theorem star_ldiv : star (a ⇘ b) = star b ⇙ star a := by
+  apply eq_of_forall_le_iff
+  intro c
+  rw [← KleeneAlgebra.star_le_star_iff, star_star,
+    ResiduatedIdemSemiring.ldiv_spec, ResiduatedIdemSemiring.rdiv_spec,
+    ← KleeneAlgebra.star_le_star_iff, star_mul, star_star]
+
+@[simp] theorem star_rdiv : star (a ⇙ b) = star b ⇘ star a := by
+  apply eq_of_forall_le_iff
+  intro c
+  rw [← KleeneAlgebra.star_le_star_iff, star_star,
+    ResiduatedIdemSemiring.rdiv_spec, ResiduatedIdemSemiring.ldiv_spec,
+    ← KleeneAlgebra.star_le_star_iff, star_mul, star_star]
+
+end ResiduatedKleeneAlgebra
