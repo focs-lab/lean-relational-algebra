@@ -70,7 +70,7 @@ corresponding to `level.v`.
 |---|---|---|---|---|---|
 | `lattice.v` | D,T | — | `Preorder`…`CompleteBooleanAlgebra`, `Order.*` | **n/a (Mathlib)** | the lattice structures themselves are all in Mathlib.  What has no counterpart is upstream's level-indexed presentation, which lets one lemma serve every sub-structure; see §7 |
 | `monoid.v` (ordered monoid part) | D,T | `Kleene/Basic.lean`, `Typed.lean` | `Monoid`, `IdemSemiring`, `KleeneAlgebra` | **partial** | the untyped specialisation is complete.  Upstream states these laws *typed*, for `X n m`; only the subset needed downstream is reproved in the typed setting in `Typed.lean` |
-| `monoid.v` (typed / category part) | D,T | `Typed.lean` (`KleeneCategory`), `TypedKAT.lean` | `CategoryTheory.Category`, `End`, `SingleObj`, `RelCat` | **partial** | typed KA and typed KAT are done, with the `SingleObj`/`End` round trip and the `RelCat` and matrix models; typed converse and typed residuals are missing |
+| `monoid.v` (typed / category part) | D,T | `Typed.lean` (`KleeneCategory`), `TypedKAT.lean` | `CategoryTheory.Category`, `End`, `SingleObj`, `RelCat` | **partial** | typed KA and typed KAT are done, with the `SingleObj`/`End` round trip and the `RelCat` and matrix models; typed converse is in `TypedConverse.lean`; typed residuals remain missing |
 | `monoid.v` (residuals) | D,T | `Residuated.lean` | `IsQuantale` residuals `⇨ₗ`/`⇨ᵣ` | **partial** | `ResiduatedIdemSemiring`/`ResiduatedKleeneAlgebra`, not requiring completeness.  Upstream's residuals are *typed* (`X n m` with `n`, `m` varying); these are untyped only, and there are no matrix residuals |
 | `monoid.v` (allegory/Dedekind) | D,T | `Allegory.lean`, `Vectors.lean` | — | **partial** | untyped allegories with the modular law, the functional/total/injective/surjective/map predicates, vectors, points and the order predicates.  Upstream's allegories are typed, and its residuated-allegory layer is not ported |
 | `kleene.v` | T | `Kleene/Basic.lean` | `kstar_mono`, `kstar_idem`, `one_add_mul_kstar`, … | **partial** | sliding, denesting, bisimulation and least-fixpoint forms are proved.  **Strict iteration `x⁺` is absent**: upstream `kleene.v` devotes about a third of its lemmas (`itr_ind_l`, `itr_ind_r`, `itr_str_l`, …) to it, and nothing here defines it |
@@ -84,7 +84,7 @@ corresponding to `level.v`.
 
 | Upstream | Kinds | Lean counterpart | Status | Missing / notes |
 |---|---|---|---|---|
-| `rel.v` (binary relations) | D,T | `Models/Rel.lean`, `Typed.lean`, `TypedKAT.lean` | **partial** | the *homogeneous* model `SetRel α α` is complete (KA, KAT, relation algebra, residuals).  Upstream's model is heterogeneous; the heterogeneous case is covered only as a `KleeneCategory`/`KleeneCategoryWithTests` on `RelCat`, without converse, Boolean structure or residuals |
+| `rel.v` (binary relations) | D,T | `Models/Rel.lean`, `Typed.lean`, `TypedKAT.lean` | **partial** | the *homogeneous* model `SetRel α α` is complete (KA, KAT, relation algebra, residuals).  Upstream's model is heterogeneous; the heterogeneous case is covered as a `KleeneCategory`/`KleeneCategoryWithTests` and `KleeneCategoryWithConverse` on `RelCat`; typed Boolean structure and residuals remain missing |
 | `lang.v` (word languages) | D,T | Mathlib `Language`, `Kleene/Complete.lean` | **done** | Mathlib supplies the `KleeneAlgebra`; this port adds `CompleteKleeneAlgebra` |
 | `srel.v` (setoid relations) | D,T | `Models/SetoidRel.lean` | **partial** | the *homogeneous* model `SetoidRel α` is complete (complete KA, relation algebra, KAT with tests the subsets of the quotient, `Relation.ReflTransGen` characterisation of the star).  Upstream's `srel n m` is **heterogeneous**, between two different setoids; that is not ported |
 | `fhrel.v` (finite relations) | D,T,A | `Models/FinRel.lean` | **partial** | `FinRel α β` is heterogeneous, and `FinRel.comp : FinRel α β → FinRel β γ → FinRel α γ` already gives heterogeneous composition, as do the Boolean-algebra and decidability instances.  What is missing is the **categorical layer around it**: associativity and identity laws for `comp` across different index types, its monotonicity and distribution over `+`, a heterogeneous converse, the `KleeneCategory` instance, and the isomorphism with `SetRel α β`.  The `Mul`/`One`/`KStar`/KAT instances, the computable transitive closure and the `SetRel` isomorphism exist only for `FinRel α α` |
@@ -101,11 +101,11 @@ corresponding to `level.v`.
 
 | Upstream | Kinds | Lean counterpart | Status | Missing / notes |
 |---|---|---|---|---|
-| `syntax.v` (typed monoid syntax) | D,T | `Decide/Term.lean`, `TypedKAT/Syntax.lean` | **partial** | typed syntax for the KA operations and tests is available; no typed converse/residual syntax or level computation |
+| `syntax.v` (typed monoid syntax) | D,T | `Decide/Term.lean`, `TypedKAT/Syntax.lean` | **partial** | typed KAT syntax and `TypedRA/Syntax.lean` for KA with converse are available; no residual syntax or level computation |
 | `lsyntax.v` (lattice syntax) | D,T | `Decide/GuardedString.lean` (`BTerm`) | **partial** | Boolean terms are shared by the untyped checker and typed KAT syntax; no general lattice syntax |
-| `normalisation.v` | D,T,A,X | `Decide/Normalise.lean`, `Decide/RaTactic.lean` | **partial** | `ra`, `ra_normalise`, `ra_simpl` over the fragment `0, 1, +, *, ∗, converse`, with the correctness theorem `RaTerm.eval_norm` fully proved.  The normal form applies the structural laws (associativity, commutativity and idempotence of `+`, units and annihilation, distributivity, all converse laws, `0∗ = 1`, `1∗ = 1`, `a∗∗ = a∗`).  Not covered: `⊓`, `ᶜ`, `⊤`, residuals and strict iteration (reified as opaque atoms), upstream's partial containment check, and any canonicity proof.  As upstream, `ra` is sound but **incomplete** |
+| `normalisation.v` | D,T,A,X | `Decide/Normalise.lean`, `Decide/RaTactic.lean` | **partial** | `ra`, `ra_normalise`, `ra_simpl` support both untyped and categorical goals over the fragment `0, 1, +, *, ∗, converse`, with the correctness theorem `RaTerm.eval_norm` fully proved.  The normal form applies the structural laws (associativity, commutativity and idempotence of `+`, units and annihilation, distributivity, all converse laws, `0∗ = 1`, `1∗ = 1`, `a∗∗ = a∗`).  Not covered: `⊓`, `ᶜ`, `⊤`, residuals and strict iteration (reified as opaque atoms), upstream's partial containment check, and any canonicity proof.  As upstream, `ra` is sound but **incomplete** |
 | `rewriting.v` | X | — | **missing** | `mrewrite`: rewriting modulo associativity of composition |
-| `untyping.v` | T | — | **missing** | `erase_faithful_leq/weq`: types can be erased in the free models below KA with converse |
+| `untyping.v` | T | `TypedRA/Syntax.lean`, `TypedRA/Matrix.lean`, `TypedRA/Support.lean`, `TypedRA/Untyping.lean` | **done for semantic transport at KA with converse** | `Term.eval_le_of_erase_eval_le` and `eval_eq_of_erase_eval_eq` transfer universal untyped laws to parallel typed expressions. Both object and morphism universes are arbitrary. Upstream's level-indexed syntactic free-model results for weaker structures remain unported |
 | `kat_untyping.v` | T | `TypedKAT/Syntax.lean`, `TypedKAT/GuardedString.lean`, `TypedKAT/Untyping.lean`, `TypedKAT/Semantics.lean` | **done for the semantic interface** | syntactic erasure, exact language correspondence, and action-path typing are proved. `Term.eval_eq_of_erase_eval_eq` and `eval_le_of_erase_eval_le` transport universally valid untyped laws to arbitrary typed KATs. `Term.semEq_iff_erase` and `semLE_iff_erase` expose preservation and reflection of semantic equality/inclusion for parallel expressions. Test valuations remain independent at each object; free-model packaging is under `gregex.v` |
 
 ---
@@ -198,14 +198,17 @@ DONE: typed Hoare conversions + action paths → typed `hkat`
 DONE: typed language operations + bounded-atom tests → bundled guarded-string KAT model
 DONE: semantic equality/order + free Boolean tests → expression quotient and universal property
 DONE: concrete assignment laws + dead-store elimination + KAT → Paterson’s S6A = S6E
+DONE: typed converse + row/column matrix recovery → KA-with-converse untyping
+DONE: indexed reification + converse untyping → typed `ra`, `ra_normalise`, `ra_simpl`
 
 REMAINING, in dependency order:
-  untyping.v (for KA with converse)
+  typed Boolean relation-algebra and residual interfaces
+  level-indexed syntactic untyping for structures below KA with converse
   `ra` over the full lattice/residual syntax (the Kleene fragment is done)
 
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
   strict iteration `x⁺` and its induction rules (upstream `kleene.v`)
-  heterogeneous models: `srel n m`, `fhrel A B` composition, `rel` with converse
+  heterogeneous models: `srel n m`, `fhrel A B` categorical structure, typed Boolean/residual structure on `rel`
   general typed trace model (upstream `traces.v`; the fixed-bound guarded-string model is done)
   typed residuals and matrix residuals (upstream `monoid.v`, `matrix.v`)
   concrete assignment for IMP (upstream `imp.v`: `aff_stack`, `aff_comm`, `aff_ite`)
@@ -338,6 +341,25 @@ an atom bound. In Lean, the quantified model universes include the object-index 
 as required by the matrix and test-family types. No finite-object or continuity assumption
 is imposed on the caller. Equality in one particular model is not a sufficient premise.
 
+#### Untyping with converse
+
+`TypedRA.Term` adds endpoint-reversing converse to the typed KA syntax. Its untyping
+interfaces quantify over every `[KleeneAlgebra K] [StarRing K]` and action valuation,
+then conclude equality or inequality in any `KleeneCategoryWithConverse`.
+
+The matrix construction reuses the finite heterogeneous Kleene algebra. Transpose plus
+entrywise converse gives its `StarRing` instance. `Term.eval_rows` simultaneously recovers
+the source row and the converse of the target column. Converse swaps those invariants;
+iteration preserves each by the existing row-star lemma. The matrix identity remains the
+full identity, including entries away from the declared source. Finite-support restriction
+then removes the finiteness assumption on syntactic objects.
+
+This proves semantic transport at the KA-with-converse level of Pous' `untyping.v`.
+It does not construct a converse expression quotient or assert upstream's level-indexed
+syntactic results for weaker structures. The typed `ra` commands reuse `RaTerm`'s existing
+normalization and its kernel-checked correctness through this theorem; their structural
+scope and incompleteness are unchanged.
+
 **Verification criteria** for each remaining item (what would justify moving it to *done*):
 
 | Item | Criterion |
@@ -354,7 +376,8 @@ is imposed on the caller. Equality in one particular model is not a sufficient p
 | Typed `hkat` | **met for the tactic**: `Examples/TypedHypotheses.lean` covers heterogeneous sequencing, loops, Boolean and guarded constraints, endomorphism rewrites, concrete relation constructors, binders, multiple goals, and invalid consequences. Zero hypotheses are composed with well-typed action paths before being joined. Search and elimination completeness remain unproved |
 | Typed guarded-string model | **met at fixed atom bound**: `LanguageCat src tgt k` has `Category`, `KleeneCategory`, and `TypedKAT` instances. `Term.eval_languageCat` proves exact agreement with `Term.lang`. `Examples/LanguageModel.lean` covers heterogeneous rules and tactics, canonical evaluation, membership and fusion, malformed atoms, zero test variables, and actual iteration |
 | `hkat` | **met for the tactic**: `RelationAlgebra/Decide/HKATTactic.lean` closes `⌜b⌝*p ≤ p*⌜b⌝ ⊢ ⌜b⌝*p∗ ≤ p∗*⌜b⌝`, which `kat` alone provably cannot (checked with `fail_if_success kat`), merges several hypotheses, and leaves other goals untouched.  Not met for Hardin–Kozen completeness, which is not formalised |
-| `ra`/`ra_normalise` | **met for the Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
+| Typed converse untyping | **met for semantic transport**: equations and inequalities in arbitrary categories, with `Examples/ConverseUntyping.lean` covering converse around iteration, infinite higher-universe objects, object identification, and rejection of a single-model premise |
+| `ra`/`ra_normalise`/`ra_simpl` | **met for the untyped and typed Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
 | `imp` | big-step semantics defined inductively, proved equal to the KAT denotation, and Hoare rules derived |
 | `paterson` | **met**: `Paterson.paterson` and `Paterson.terminates_iff`; regressions cover arbitrary interpretations, nontermination with a false predicate, immediate termination with a true predicate, a concrete one-iteration execution, and the dead-store side conditions |
 
@@ -367,8 +390,9 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 
 Pick up here, in this order:
 
-1. **Remaining hierarchy and untyping parity** — port the separate KA-with-converse untyping
-   theorem and the typed interfaces still marked partial in the inventory.
+1. **Remaining typed hierarchy** — add typed Boolean relation-algebra and residual interfaces,
+   with heterogeneous relational instances. Converse and semantic untyping at the KA level
+   are done; upstream's weaker level-indexed syntactic untyping remains a separate gap.
 2. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
    extending `ra` to `⊓`, `ᶜ`, `⊤` and residuals rather than treating them as atoms.
 3. **The independent gaps listed at the end of §8**, none of which blocks anything else:
@@ -391,3 +415,4 @@ Pick up here, in this order:
 | 2026-09-16 (typed language model) | Bundled the existing typed guarded-string languages as `LanguageCat src tgt k`, with tests the sets of bounded atoms. Proved category laws, both rectangular star-induction rules, test injectivity, and `Term.eval_languageCat`, identifying canonical evaluation with `Term.lang`. Added `LanguageCat.Tests X` and `testVarAt X i` for object inference in test notation, and 18 regression declarations. Full build: 1526 jobs, zero warnings. Axiom audits of 26 public theorems, seven named regression proofs, and the three model instances use only `propext`, `Classical.choice`, and `Quot.sound`. The typed expression quotient and its universal property remain next. |
 | 2026-09-17 (free typed KAT) | Added semantic equality/order at all atom bounds, the free Boolean test algebra, and the typed expression quotient `FreeCat src tgt`. Proved the category and KAT laws, test injectivity, erasure preservation/reflection, and `FreeCat.existsUnique_lift`: each object map and independent test/action valuation extends uniquely to a typed KAT homomorphism. The target universes are arbitrary; no finiteness or continuity assumption is needed. Added 18 regression declarations covering generic tactics, rectangular induction, adequate and inadequate atom bounds, high test indices, distinct actions, and independent tests after identifying objects. Full build: 1531 jobs, zero warnings. Axiom audit: 83 declarations (66 public library theorems, six named regression proofs, seven instances, and four interpretation definitions), using only `propext`, `Classical.choice`, and `Quot.sound`. Paterson is the next application milestone. |
 | 2026-09-17 (Paterson) | Proved `Paterson.paterson`: the S6A and S6E expressions from Pous's `examples/paterson.v` define equal relations for every interpretation of `f`, `g`, and `P` over natural-valued five-cell stores. Added expression substitution, assignment and test-commutation laws, agreement facts, and dead-store elimination through iteration, then connected the numbered algebraic stages of the Angus–Kozen proof. The algebraic lemmas hold in arbitrary KATs; the concrete facts are derived from updates. Nine regression declarations cover arbitrary interpretations, constantly false and true predicates, a terminating execution with one loop iteration, unread-variable detection, and the necessity of clearing discarded stores. Full build: 1538 jobs, zero warnings. Audited all 81 public theorems in the development; they use only `propext`, `Classical.choice`, and `Quot.sound` (some need no axioms). |
+| 2026-09-17 (typed converse) | Added `KleeneCategoryWithConverse`, its derived laws, and `RelCat`, rectangular-matrix, `SingleObj`, and `End` compatibility. Proved equation and inequality untyping for KA with converse through simultaneous row/column recovery and finite object support. Extended `ra`, `ra_normalise`, and `ra_simpl` to categorical goals using indexed reification and checked normal-form readback. Added 50 regression declarations covering abstract and concrete models, higher universes, object identification, iteration, malformed syntax, invalid identities, binders, and multiple goals. Full build: 1547 jobs, zero warnings. Axiom audit of 50 declarations reports only `propext`, `Classical.choice`, and `Quot.sound` (some need none). Typed Boolean/residual interfaces and upstream's weaker level-indexed syntactic untyping remain open. |

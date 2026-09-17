@@ -13,8 +13,8 @@ for this Lean development. See [credits and references](#credits-and-references)
 `hkat` all work in **any** Kleene algebra, because Kozen's completeness theorem and the
 untyped Kozen–Smith completeness theorem for KAT are both proved here. `hkat` additionally
 uses Hoare-style hypotheses from the context. Both `kat` and `hkat` handle typed categorical
-goals, where programs can have different source and target objects. `ra` handles converse over the
-Kleene fragment. See [tactic support](#tactic-support) before choosing a model.
+goals, where programs can have different source and target objects. `ra` handles the Kleene
+fragment with converse in both untyped and typed models. See [tactic support](#tactic-support) before choosing a model.
 
 ## Get started
 
@@ -65,6 +65,7 @@ example (R S : SetRel α α) : star (R * S) = star S * star R := by
 More examples: [algebra and relations](RelationAlgebra/Examples/Basic.lean) ·
 [using the tactics](RelationAlgebra/Examples/Decide.lean) ·
 [typed goals](RelationAlgebra/Examples/TypedDecide.lean) ·
+[typed converse](RelationAlgebra/Examples/TypedRa.lean) ·
 [Paterson’s flowchart equivalence](RelationAlgebra/Examples/Paterson.lean).
 
 <details>
@@ -76,11 +77,12 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "205b1d3aa9abb5c6414913edc8b8d897e5961be1"
+rev = "b8e31a71315dc12a1ea673e1c073b9549d5ad8a2"
 ```
 
-This pins the library to a revision with typed `kat`/`hkat`, KA/KAT completeness, algebraic
-untyping, the free typed KAT with its universal property, and Paterson’s flowchart equivalence.
+This pins the library to a revision with typed `kat`/`hkat`/`ra`, KA/KAT completeness,
+algebraic untyping with tests or converse, the free typed KAT with its universal property,
+and Paterson’s flowchart equivalence.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -117,7 +119,7 @@ from `b` ends in `c`. It is defined by `⌜b⌝ * p * ⌜cᶜ⌝ = 0`.
 | `kat` | Equalities, inequalities, and `KAT.HoareTriple` | KA operations, embedded Boolean tests, `ifThenElse`, `whileDo` |
 | `kat` on typed goals | Equalities, inequalities, and `TypedKAT.HoareTriple` | `⊥`, `𝟙`, `⊔`, `≫`, `∗`, typed tests and guarded commands |
 | `hkat` | Untyped or typed goals, using Hoare-style hypotheses from the context | The same operations as `kat` |
-| `ra`, `ra_normalise`, `ra_simpl` | Equalities and inequalities | KA operations and converse |
+| `ra`, `ra_normalise`, `ra_simpl` | Untyped or typed equalities and inequalities | KA operations and converse |
 
 `ka` proves identities in any Kleene algebra. `kat` adds Boolean tests and also supports
 typed composition. `hkat` adds reasoning from hypotheses at one or several objects.
@@ -143,7 +145,10 @@ They require `[Category C] [KleeneCategory C]` and, when tests occur, `[TypedKAT
 with `[∀ X, BooleanAlgebra (T X)]`. See [typed identities](RelationAlgebra/Examples/TypedDecide.lean)
 and [typed hypothesis examples](RelationAlgebra/Examples/TypedHypotheses.lean).
 
-`ra` requires `[KleeneAlgebra K] [StarRing K]`, which a `RelationAlgebra` instance supplies.
+Untyped `ra` requires `[KleeneAlgebra K] [StarRing K]`, which a `RelationAlgebra` instance
+supplies. Typed `ra` requires `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]`.
+`ra_normalise` leaves both sides in normal form; `ra_simpl` performs lighter cleanup without
+distributing products or sorting unions. Both leave any remaining goal for further proof.
 
 Three guarantees are worth keeping apart. *Accepting-checker soundness* is proved for all four
 tactics: if the checker accepts, the goal holds. *Algebraic completeness* is proved for Kleene
@@ -238,6 +243,26 @@ To reuse an untyped law directly, use
 arbitrary untyped KATs; the theorem transports it to any typed interpretation. No atom bound
 or checker fuel is required. See [worked examples](RelationAlgebra/Examples/Untyping.lean).
 
+Converse reverses a morphism's endpoints: `f : X ⟶ Y` gives `fᵒ : Y ⟶ X`.
+Enable the notation with `open scoped KleeneCategoryWithConverse`:
+
+```lean
+open CategoryTheory
+open scoped KleeneCategoryWithConverse
+
+example {C : Type*} [Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]
+    {X Y Z : C} (f h : X ⟶ Y) (g : Y ⟶ Z) :
+    ((f ⊔ h) ≫ g)ᵒ = gᵒ ≫ fᵒ ⊔ gᵒ ≫ hᵒ := by
+  ra
+```
+
+Instances cover heterogeneous relations (`RelCat`) and rectangular matrices (`Matrix.Mat K`).
+Matrix converse is conjugate transpose, so coefficients require `[StarRing K]`.
+[`TypedRA.Term.eval_eq_of_erase_eval_eq`](RelationAlgebra/TypedRA/Untyping.lean) and its
+inequality counterpart transport universally valid untyped laws with converse to typed
+models, without finiteness or continuity assumptions. See the
+[untyping examples](RelationAlgebra/Examples/ConverseUntyping.lean).
+
 For guarded-string semantics, `TypedKAT.LanguageCat src tgt k` is a typed KAT with atoms
 of length `k`, over an arbitrary object alphabet. Use `LanguageCat.Tests X` for tests at
 object `X`, and `testVarAt X i` for a primitive test. `Term.eval_languageCat` proves that
@@ -279,7 +304,8 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Automata and Kozen's completeness proof | [Automata](RelationAlgebra/Automata), [Decide/KACompleteness](RelationAlgebra/Decide/KACompleteness.lean) |
 | Kozen–Smith completeness for KAT (untyped) | [KATCompleteness](RelationAlgebra/KATCompleteness) |
 | Typed KAT completeness and reflection | [TypedKATCompleteness](RelationAlgebra/TypedKATCompleteness) |
-| Reusing untyped laws in typed models | [TypedKAT/Untyping](RelationAlgebra/TypedKAT/Untyping.lean), [examples](RelationAlgebra/Examples/Untyping.lean) |
+| Reusing untyped laws in typed models | [KAT untyping](RelationAlgebra/TypedKAT/Untyping.lean), [converse untyping](RelationAlgebra/TypedRA/Untyping.lean) |
+| Typed converse and its models | [TypedConverse](RelationAlgebra/TypedConverse.lean), [tactic examples](RelationAlgebra/Examples/TypedRa.lean) |
 | The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
 | Paterson’s S6A = S6E flowchart equivalence | [Examples/Paterson](RelationAlgebra/Examples/Paterson.lean), [schemes](RelationAlgebra/Examples/Paterson/Programs.lean), [regressions](RelationAlgebra/Examples/Paterson/Regression.lean) |
@@ -309,8 +335,9 @@ tests have an interpretation at each object, and only endomorphisms can be itera
 untyping interface transports universally valid untyped laws to typed models. Both the
 guarded-string language model and the expression quotient are now bundled as typed KATs,
 with the free model's universal property proved. Paterson's flowchart equivalence is also
-mechanized. Next are the KA-with-converse untyping theorem, typed converse and residual
-interfaces, and extending `ra` beyond the Kleene fragment.
+mechanized. Typed converse, its untyping theorem, and typed `ra` are available too.
+Next are typed residual and Boolean relation-algebra interfaces, matrix residuals, and
+extending `ra` beyond the Kleene fragment.
 [PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
 
