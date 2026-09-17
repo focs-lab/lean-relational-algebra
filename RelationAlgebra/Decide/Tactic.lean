@@ -1,8 +1,12 @@
+import RelationAlgebra.Kleene.Iteration
 import RelationAlgebra.Decide.KACompleteness
 import Mathlib.Util.AtomM
 
 /-!
 # The `ka` tactic
+
+Strict iteration `a⁺` is expanded by proved rewrites before reification. It uses the same
+certificate checker and fuel bound as `a * a∗`.
 
 `ka` closes goals of the form `a = b` or `a ≤ b` in **any** Kleene algebra whose two sides
 denote the same regular language when the maximal non-Kleene-algebraic subterms are read as
@@ -67,7 +71,11 @@ def kernelIsTrue (p : Expr) : MetaM Bool := do
   | .error _ => return false
 
 /-- The core of the `ka` tactic. -/
-def kaCore (fuel : ℕ) : TacticM Unit := do
+def kaCore (fuel : ℕ) : TacticM Unit := focus do
+  liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  evalTactic (← `(tactic| simp (config := { failIfUnchanged := false }) only
+    [KleeneAlgebra.kplus_eq_mul_kstar]))
+  if (← getGoals).isEmpty then return
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)

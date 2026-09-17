@@ -1,3 +1,4 @@
+import RelationAlgebra.Decide.IterationTactic
 import RelationAlgebra.KATCompleteness.Main
 import RelationAlgebra.KAT.Hoare
 import RelationAlgebra.Models.Bool
@@ -6,6 +7,9 @@ import RelationAlgebra.Decide.TypedKATTactic
 
 /-!
 # The `kat` tactic
+
+Strict iteration `a⁺` is expanded by proved rewrites before reification. Typed endomorphisms
+expand to `f ≫ f∗`; no additional algebraic assumption is needed.
 
 `kat` closes goals `a = b` or `a ≤ b` in an *arbitrary* Kleene algebra with tests (e.g.
 relations `SetRel α α` with tests `Set α`, after `open scoped SetRel`; or any Kleene algebra
@@ -39,6 +43,8 @@ namespace KAT.Tactic
 /-- The core of the `kat` tactic. -/
 def katCore (fuel : ℕ) : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  RelationAlgebra.IterationTactic.expand
+  if (← getGoals).isEmpty then return
   evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple,
     TypedKAT.ifThenElse, TypedKAT.whileDo, TypedKAT.HoareTriple, sdiff_eq, himp_eq]))
   -- only the original goal is in scope here (`focus`); the preprocessing may have closed it

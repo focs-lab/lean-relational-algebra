@@ -1,3 +1,4 @@
+import RelationAlgebra.Decide.IterationTactic
 import RelationAlgebra.Decide.KATTactic
 import RelationAlgebra.Decide.HKATCommon
 import RelationAlgebra.Decide.TypedHKATTactic
@@ -5,6 +6,9 @@ import RelationAlgebra.KAT.Hypotheses
 
 /-!
 # The `hkat` tactic
+
+Strict iteration `a⁺` is expanded by proved rewrites before reification. Expansion applies to
+both the goal and its hypotheses, with typed composition where needed.
 
 `hkat` closes goals `a = b`, `a ≤ b` and `KAT.HoareTriple b p c` in an *arbitrary* Kleene algebra
 with tests, and their typed categorical counterparts, **using the hypotheses of the local
@@ -157,6 +161,8 @@ def universalExpr (K : Expr) (es : Array Expr) : MetaM Expr := do
 /-- The core of the `hkat` tactic. -/
 def hkatCore (fuel : ℕ) : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  RelationAlgebra.IterationTactic.expand true
+  if (← getGoals).isEmpty then return
   evalTactic (← `(tactic| try simp only [KAT.ifThenElse, KAT.whileDo, KAT.HoareTriple,
     TypedKAT.ifThenElse, TypedKAT.whileDo, TypedKAT.HoareTriple, sdiff_eq, himp_eq]))
   -- only the original goal is in scope here (`focus`); the preprocessing may have closed it

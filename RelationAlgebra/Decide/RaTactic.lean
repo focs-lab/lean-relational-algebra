@@ -1,3 +1,4 @@
+import RelationAlgebra.Decide.IterationTactic
 import RelationAlgebra.Decide.Normalise
 import RelationAlgebra.Decide.TypedRaTactic
 import RelationAlgebra.Decide.FullRATactic
@@ -5,6 +6,10 @@ import Mathlib.Util.AtomM
 
 /-!
 # The `ra`, `ra_normalise` and `ra_simpl` tactics
+
+Strict iteration `a⁺` is expanded by proved rewrites before reification. Constants, nested
+iterations and converse are simplified before expansion; the remaining proof paths are
+unchanged.
 
 These tactics follow Damien Pous' `theories/normalisation.v` in
 [`relation-algebra`](https://github.com/damien-pous/relation-algebra).
@@ -155,6 +160,8 @@ def kernelIsTrue (p : Expr) : MetaM Bool := do
 sides become identical, the goal is closed by reflexivity. -/
 def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  IterationTactic.simplify
+  if (← getGoals).isEmpty then return
   let extended ← withMainContext do
     let target ← whnfR (← instantiateMVars (← (← getMainGoal).getType))
     unless target.isAppOfArity ``Eq 3 || target.isAppOfArity ``LE.le 4 do
@@ -212,6 +219,8 @@ def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
 /-- Close by reflected KA normalization or the Boolean/residual structural checker. -/
 def raCore : TacticM Unit := focus do
   liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
+  IterationTactic.simplify
+  if (← getGoals).isEmpty then return
   let extended ← withMainContext do
     let target ← whnfR (← instantiateMVars (← (← getMainGoal).getType))
     unless target.isAppOfArity ``Eq 3 || target.isAppOfArity ``LE.le 4 do
