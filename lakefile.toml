@@ -1,5 +1,9 @@
 name = "relation_algebra"
 version = "0.1.0"
+description = "Kleene algebra, KAT, relation algebra, and proof-producing tactics in Lean 4"
+homepage = "https://github.com/focs-lab/lean-relational-algebra"
+license = "LGPL-3.0-or-later"
+licenseFiles = ["LICENSE", "COPYING", "COPYING.LESSER", "NOTICE.md"]
 keywords = ["math", "kleene algebra", "KAT", "relations"]
 defaultTargets = ["RelationAlgebra"]
 

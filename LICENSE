@@ -1,0 +1,25 @@
+Relational algebra in Lean 4
+
+This project is a Lean translation and extension of Damien Pous's
+relation-algebra library for Rocq/Coq. Upstream attribution and the dated
+modification notice are preserved in NOTICE.md.
+
+Lean translation and extensions: Copyright (c) 2026 Umang Mathur and contributors.
+Existing upstream rights and notices are retained; see NOTICE.md.
+
+Except where a file states otherwise, the source code, examples, scripts, and
+documentation in this repository are distributed under the GNU Lesser General
+Public License, version 3 or (at your option) any later version.
+
+SPDX-License-Identifier: LGPL-3.0-or-later
+
+This library is free software: you can redistribute it and/or modify it under
+the terms of that license. It is distributed WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE. See the GNU Lesser General Public License for details.
+
+COPYING.LESSER contains the complete LGPL version 3 text. It incorporates the
+GPL version 3 text supplied in COPYING. Both texts accompany this distribution.
+The license documents themselves retain their own verbatim-copying notices.
+
+Separately fetched dependencies retain their own licenses; see THIRD_PARTY.md.
