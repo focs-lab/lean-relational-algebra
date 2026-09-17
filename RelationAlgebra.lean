@@ -10,6 +10,7 @@ import RelationAlgebra.Residuated
 import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
+import RelationAlgebra.TypedConverse
 import RelationAlgebra.TypedKAT
 import RelationAlgebra.TypedKAT.Hypotheses
 import RelationAlgebra.TypedKAT.Syntax
@@ -69,3 +70,4 @@ import RelationAlgebra.Examples.LanguageModel
 import RelationAlgebra.Examples.FreeKAT
 import RelationAlgebra.Examples.Paterson
 import RelationAlgebra.Examples.Paterson.Regression
+import RelationAlgebra.Examples.TypedConverse
