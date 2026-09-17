@@ -67,3 +67,5 @@ import RelationAlgebra.Examples.Untyping
 import RelationAlgebra.Examples.TypedHypotheses
 import RelationAlgebra.Examples.LanguageModel
 import RelationAlgebra.Examples.FreeKAT
+import RelationAlgebra.Examples.Paterson
+import RelationAlgebra.Examples.Paterson.Regression
