@@ -1,4 +1,5 @@
 import RelationAlgebra.Decide.Normalise
+import RelationAlgebra.Decide.TypedRaTactic
 import Mathlib.Util.AtomM
 
 /-!
@@ -22,6 +23,12 @@ All three apply to any `K` with `[KleeneAlgebra K] [StarRing K]` — in particul
 `[RelationAlgebra K]`, and to relations `SetRel α α` after `open scoped SetRel`.  The
 maximal subterms that are not built from `0`, `1`, `+`, `*`, `∗` and `star` (converse) are
 treated as opaque variables.
+
+Categorical goals use `[Category C] [KleeneCategory C] [KleeneCategoryWithConverse C]`.
+Their operations are `⊥`, `𝟙`, `⊔`, `≫`, `∗`, and `converse` (scoped notation `ᵒ`).
+The typed reifier retains endpoints and transports normalization proofs through
+`TypedRA.Term.eval_eq_of_erase_eval_eq`. All three commands introduce leading binders
+and focus on the original goal.
 
 ## Guarantees
 
@@ -150,9 +157,22 @@ def kernelIsTrue (p : Expr) : MetaM Bool := do
 (`RaTerm.eval_norm` or `RaTerm.eval_simplify`), and leave the transformed goal.  If the two
 sides become identical, the goal is closed by reflexivity. -/
 def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
+  liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)
+    let (isLe, K, lhs, rhs) ← match (← whnfR goalType).getAppFnArgs with
+      | (``Eq, #[K, a, b]) => pure (false, K, a, b)
+      | (``LE.le, #[K, _, a, b]) => pure (true, K, a, b)
+      | _ => throwError "{tac}: the goal must be an equality or an inequality"
+    if let some hom ← TypedRA.Tactic.homType? K then
+      let next ← TypedRA.Tactic.rewriteGoal goal goalType hom lhs rhs isLe fn
+      replaceMainGoal [next]
+      if isLe then
+        try evalTactic (← `(tactic| exact le_rfl)) catch _ => pure ()
+      else
+        try evalTactic (← `(tactic| rfl)) catch _ => pure ()
+      return
     let g ← reifyGoal tac goalType
     let (_, lhs') ← normalForm tac fn g g.lhsTerm
     let (_, rhs') ← normalForm tac fn g g.rhsTerm
@@ -183,9 +203,17 @@ def rewriteBoth (tac : String) (fn lemm : Name) : TacticM Unit := focus do
 
 /-- The core of the `ra` tactic: close the goal when the two normal forms agree. -/
 def raCore : TacticM Unit := focus do
+  liftMetaTactic fun goal ↦ do return [(← goal.intros).2]
   let goal ← getMainGoal
   goal.withContext do
     let goalType ← instantiateMVars (← goal.getType)
+    let (isLe, K, lhs, rhs) ← match (← whnfR goalType).getAppFnArgs with
+      | (``Eq, #[K, a, b]) => pure (false, K, a, b)
+      | (``LE.le, #[K, _, a, b]) => pure (true, K, a, b)
+      | _ => throwError "ra: the goal must be an equality or an inequality"
+    if let some hom ← TypedRA.Tactic.homType? K then
+      TypedRA.Tactic.closeGoal goal goalType hom lhs rhs isLe
+      return
     let g ← reifyGoal "ra" goalType
     let test := mkApp2 (mkConst (if g.isLe then ``RaTerm.normLe else ``RaTerm.normEq))
       g.lhsTerm g.rhsTerm

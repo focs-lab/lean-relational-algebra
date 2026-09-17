@@ -76,3 +76,4 @@ import RelationAlgebra.Examples.Paterson
 import RelationAlgebra.Examples.Paterson.Regression
 import RelationAlgebra.Examples.TypedConverse
 import RelationAlgebra.Examples.ConverseUntyping
+import RelationAlgebra.Examples.TypedRa
