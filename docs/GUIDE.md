@@ -314,4 +314,3 @@ proves that S6A and S6E define the same state relation for arbitrary interpretat
 through `io` and clear their four temporary variables. The proof combines assignment
 substitution, dead-store elimination through loops, and KAT reasoning; it does not assume
 that the programs terminate. Import `RelationAlgebra.Examples.Paterson` for this development.
-

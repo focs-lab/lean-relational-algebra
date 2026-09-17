@@ -1,0 +1,35 @@
+name: Lean checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lean-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596 # v1
+        with:
+          auto-config: false
+          build: true
+          build-args: --wfail
+          test: false
+          lint: false
+          use-mathlib-cache: true
+      - name: Audit axioms of all library declarations
+        run: lake env lean scripts/check_axioms.lean
+      - name: Check documentation and module coverage
+        run: python3 scripts/check_docs.py
