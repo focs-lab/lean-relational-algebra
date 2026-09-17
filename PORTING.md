@@ -152,9 +152,9 @@ This distinction matters and is easy to blur:
 
 | Upstream | Kinds | Lean counterpart | Status |
 |---|---|---|---|
-| `examples/imp.v` | D,T,E | `Examples/Imp.lean` | **partial** — inductive big-step semantics, `bigStep_iff_denote`, `hoareCmd_iff`, the IMP Hoare rules, and nine program equivalences closed by `kat`.  **Not ported**: upstream's *specialised* assignment layer, namely a store type with named locations, the derived `x := e` notation, and the assignment lemmas `aff_stack`, `aff_idem`, `aff_comm`, `aff_ite`.  Concrete assignments are perfectly expressible as they stand — instantiate `σ` with a store and use `Cmd.assign (Function.update s x v)` — so what is missing is the definitions and the lemmas about them, not the expressive power |
+| `examples/imp.v` | D,T,E | `Examples/Imp.lean` | **partial** — inductive big-step semantics, `bigStep_iff_denote`, `hoareCmd_iff`, the IMP Hoare rules, and nine program equivalences closed by `kat`.  **Not ported**: upstream's *specialised* assignment layer, namely a store type with named locations, the derived `x := e` notation, and the assignment lemmas `aff_stack`, `aff_idem`, `aff_comm`, `aff_ite`.  Concrete assignments are perfectly expressible as they stand — instantiate `σ` with a store and use `Cmd.assign (Function.update s x v)` — so what is missing is the definitions and the lemmas about them, not the expressive power. `Examples/Paterson/Model.lean` now supplies a separate five-cell assignment and substitution model for Paterson’s proof; the general IMP interface remains separate |
 | `examples/compiler_opts.v` | T,E | `Examples/CompilerOpts.lean` | **done** — **all twelve** upstream optimisation statements are ported and proved, with the exact correspondence tabulated in the file.  The four that upstream proves with `mrewrite` (§3.2, §3.3, §3.4i, §3.4ii) are proved here by explicit associativity steps in `calc` plus `hkat`; for §3.4ii the route taken is shorter than upstream's.  Three of upstream's five preliminary lemmas are ported; `lemma_1'` and `lemma_1''` are unused and omitted |
-| `examples/paterson.v` | T,E | — | **missing** — Paterson's flowchart equivalence (Manna 1974; Angus–Kozen 2001).  No longer blocked by `hkat`; it is a large single development (541 lines upstream) |
+| `examples/paterson.v` | D,T,E | `Examples/Paterson.lean`, `Examples/Paterson/` | **done** — `Paterson.paterson` proves the same S6A = S6E relational statement as Pous, for arbitrary `f`, `g`, and `P` on natural-valued five-cell stores. The development includes expression substitution, the four assignment laws, test commutation, agreement facts, and dead-store elimination through iteration. All assignment hypotheses are derived from updates. The larger `hkat` calls are factored into reusable abstract KAT lemmas. This is the two-scheme equivalence, not a general flowchart-to-expression translation. |
 
 `KAT/Hypotheses.lean` ports the Hardin–Kozen hypothesis-conversion and elimination lemmas that
 upstream's `hkat` uses, and `Decide/HKATTactic.lean` implements the tactic.  As upstream, only
@@ -197,11 +197,11 @@ DONE: finite matrix recovery + finite support → algebraic KAT untyping interfa
 DONE: typed Hoare conversions + action paths → typed `hkat`
 DONE: typed language operations + bounded-atom tests → bundled guarded-string KAT model
 DONE: semantic equality/order + free Boolean tests → expression quotient and universal property
+DONE: concrete assignment laws + dead-store elimination + KAT → Paterson’s S6A = S6E
 
 REMAINING, in dependency order:
   untyping.v (for KA with converse)
   `ra` over the full lattice/residual syntax (the Kleene fragment is done)
-  paterson (unblocked: `hkat` exists)
 
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
   strict iteration `x⁺` and its induction rules (upstream `kleene.v`)
@@ -356,7 +356,7 @@ is imposed on the caller. Equality in one particular model is not a sufficient p
 | `hkat` | **met for the tactic**: `RelationAlgebra/Decide/HKATTactic.lean` closes `⌜b⌝*p ≤ p*⌜b⌝ ⊢ ⌜b⌝*p∗ ≤ p∗*⌜b⌝`, which `kat` alone provably cannot (checked with `fail_if_success kat`), merges several hypotheses, and leaves other goals untouched.  Not met for Hardin–Kozen completeness, which is not formalised |
 | `ra`/`ra_normalise` | **met for the Kleene-with-converse fragment**: `Decide/RaTactic.lean` closes the structural identities and `ra_normalise` visibly simplifies a goal `ra` cannot close.  Not met for the lattice and residual operations, which are still treated as atoms |
 | `imp` | big-step semantics defined inductively, proved equal to the KAT denotation, and Hoare rules derived |
-| `paterson` | the two flowchart schemes proved equivalent |
+| `paterson` | **met**: `Paterson.paterson` and `Paterson.terminates_iff`; regressions cover arbitrary interpretations, nontermination with a false predicate, immediate termination with a true predicate, a concrete one-iteration execution, and the dead-store side conditions |
 
 ---
 
@@ -367,12 +367,11 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 
 Pick up here, in this order:
 
-1. **`examples/paterson.v`** — large but self-contained, and unblocked now that `hkat` exists.
-2. **Remaining hierarchy and untyping parity** — port the separate KA-with-converse untyping
+1. **Remaining hierarchy and untyping parity** — port the separate KA-with-converse untyping
    theorem and the typed interfaces still marked partial in the inventory.
-3. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
+2. **Matrix residuals**, the `is_atom` / lattice-of-points fragment of `relalg.v`, and
    extending `ra` to `⊓`, `ᶜ`, `⊤` and residuals rather than treating them as atoms.
-4. **The independent gaps listed at the end of §8**, none of which blocks anything else:
+3. **The independent gaps listed at the end of §8**, none of which blocks anything else:
    strict iteration, the heterogeneous models, the general typed trace model, and IMP's
    concrete assignment.
 
@@ -391,3 +390,4 @@ Pick up here, in this order:
 | 2026-09-16 (typed hypotheses) | Added 14 typed Hoare conversion and elimination lemmas, plus categorical `hkat` using state elimination to build well-typed action paths around zero hypotheses. Boolean facts are instantiated at every matching object, including constant test families. Added 40 regression declarations covering heterogeneous sequencing and iteration, guarded constraints, rewriting, concrete relation constructors, rectangular matrices, binders, multiple goals, insufficient fuel, and invalid consequences. Full build: 1524 jobs, zero warnings. Axiom audits of all 14 lemmas and six named tactic proofs use only `propext`, `Classical.choice`, and `Quot.sound`. Search and elimination completeness remain unproved; typed free-model packaging is next. |
 | 2026-09-16 (typed language model) | Bundled the existing typed guarded-string languages as `LanguageCat src tgt k`, with tests the sets of bounded atoms. Proved category laws, both rectangular star-induction rules, test injectivity, and `Term.eval_languageCat`, identifying canonical evaluation with `Term.lang`. Added `LanguageCat.Tests X` and `testVarAt X i` for object inference in test notation, and 18 regression declarations. Full build: 1526 jobs, zero warnings. Axiom audits of 26 public theorems, seven named regression proofs, and the three model instances use only `propext`, `Classical.choice`, and `Quot.sound`. The typed expression quotient and its universal property remain next. |
 | 2026-09-17 (free typed KAT) | Added semantic equality/order at all atom bounds, the free Boolean test algebra, and the typed expression quotient `FreeCat src tgt`. Proved the category and KAT laws, test injectivity, erasure preservation/reflection, and `FreeCat.existsUnique_lift`: each object map and independent test/action valuation extends uniquely to a typed KAT homomorphism. The target universes are arbitrary; no finiteness or continuity assumption is needed. Added 18 regression declarations covering generic tactics, rectangular induction, adequate and inadequate atom bounds, high test indices, distinct actions, and independent tests after identifying objects. Full build: 1531 jobs, zero warnings. Axiom audit: 83 declarations (66 public library theorems, six named regression proofs, seven instances, and four interpretation definitions), using only `propext`, `Classical.choice`, and `Quot.sound`. Paterson is the next application milestone. |
+| 2026-09-17 (Paterson) | Proved `Paterson.paterson`: the S6A and S6E expressions from Pous's `examples/paterson.v` define equal relations for every interpretation of `f`, `g`, and `P` over natural-valued five-cell stores. Added expression substitution, assignment and test-commutation laws, agreement facts, and dead-store elimination through iteration, then connected the numbered algebraic stages of the Angus–Kozen proof. The algebraic lemmas hold in arbitrary KATs; the concrete facts are derived from updates. Nine regression declarations cover arbitrary interpretations, constantly false and true predicates, a terminating execution with one loop iteration, unread-variable detection, and the necessity of clearing discarded stores. Full build: 1538 jobs, zero warnings. Audited all 81 public theorems in the development; they use only `propext`, `Classical.choice`, and `Quot.sound` (some need no axioms). |

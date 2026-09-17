@@ -64,7 +64,8 @@ example (R S : SetRel α α) : star (R * S) = star S * star R := by
 
 More examples: [algebra and relations](RelationAlgebra/Examples/Basic.lean) ·
 [using the tactics](RelationAlgebra/Examples/Decide.lean) ·
-[typed goals](RelationAlgebra/Examples/TypedDecide.lean).
+[typed goals](RelationAlgebra/Examples/TypedDecide.lean) ·
+[Paterson’s flowchart equivalence](RelationAlgebra/Examples/Paterson.lean).
 
 <details>
 <summary><strong>Use as a dependency in another project</strong></summary>
@@ -75,11 +76,11 @@ Use the same Lean toolchain (**Lean 4.30.0**) and add this entry to your `lakefi
 [[require]]
 name = "relation_algebra"
 git = "https://github.com/focs-lab/lean-relational-algebra.git"
-rev = "d41bcb90f4580479a550f41b7c72ed5ac5a04392"
+rev = "205b1d3aa9abb5c6414913edc8b8d897e5961be1"
 ```
 
 This pins the library to a revision with typed `kat`/`hkat`, KA/KAT completeness, algebraic
-untyping, and the free typed KAT with its universal property.
+untyping, the free typed KAT with its universal property, and Paterson’s flowchart equivalence.
 Run `lake update`, `lake exe cache get`, and `lake build`, then import `RelationAlgebra` to use
 the library.
 
@@ -281,6 +282,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Reusing untyped laws in typed models | [TypedKAT/Untyping](RelationAlgebra/TypedKAT/Untyping.lean), [examples](RelationAlgebra/Examples/Untyping.lean) |
 | The IMP while-language on top of KAT | [Examples/Imp](RelationAlgebra/Examples/Imp.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](RelationAlgebra/Examples/CompilerOpts.lean) |
+| Paterson’s S6A = S6E flowchart equivalence | [Examples/Paterson](RelationAlgebra/Examples/Paterson.lean), [schemes](RelationAlgebra/Examples/Paterson/Programs.lean), [regressions](RelationAlgebra/Examples/Paterson/Regression.lean) |
 
 Each module starts with an overview of its definitions and conventions. The Hoare rules
 cover propositional control flow; termination proofs are outside their scope. The matrix star
@@ -289,6 +291,13 @@ uses Kozen's block construction; the general instance is noncomputable, and
 
 [PORTING.md](PORTING.md) tracks coverage of Pous' library module by module, and is explicit
 about what is proved and what is not.
+
+**Paterson’s flowcharts** are a worked application of the framework. `Paterson.paterson M`
+proves that S6A and S6E define the same state relation for arbitrary interpretations of
+`f`, `g`, and `P` over natural-valued stores, following Pous’s model. Both schemes return
+through `io` and clear their four temporary variables. The proof combines assignment
+substitution, dead-store elimination through loops, and KAT reasoning; it does not assume
+that the programs terminate. Import `RelationAlgebra.Examples.Paterson` for this development.
 
 ## Next steps
 
@@ -299,8 +308,9 @@ tests have an interpretation at each object, and only endomorphisms can be itera
 `kat` reifies typed goals directly, `hkat` uses hypotheses across objects, and the algebraic
 untyping interface transports universally valid untyped laws to typed models. Both the
 guarded-string language model and the expression quotient are now bundled as typed KATs,
-with the free model's universal property proved. Next are Paterson's flowchart equivalence,
-typed converse and residual interfaces, and extending `ra` beyond the Kleene fragment.
+with the free model's universal property proved. Paterson's flowchart equivalence is also
+mechanized. Next are the KA-with-converse untyping theorem, typed converse and residual
+interfaces, and extending `ra` beyond the Kleene fragment.
 [PORTING.md](PORTING.md) has the
 dependency-ordered plan and an exact continuation point.
 
@@ -322,6 +332,7 @@ proof infrastructure, algebraic hierarchies, and models.
 The main mathematical and mechanization references are:
 
 - **Damien Pous (2013).** [Kleene Algebra with Tests and Coq Tools for While Programs](https://arxiv.org/abs/1302.1737). KAT formalization and automation.
+- **Allegra Angus and Dexter Kozen (2001).** [Kleene Algebra with Tests and Program Schematology](https://www.cs.cornell.edu/~kozen/Papers/allegra.pdf). Paterson’s flowchart equivalence (§5); our proof follows [Pous’s mechanization](https://github.com/damien-pous/relation-algebra/blob/2d2af3631929399bbac56f57b3e15302d8697e1c/examples/paterson.v).
 - **Dexter Kozen (1994).** [A Completeness Theorem for Kleene Algebras and the Algebra of Regular Events](https://www.cs.cornell.edu/~kozen/papers/ka.pdf). KA axioms, matrices, and completeness.
 - **Dexter Kozen (1997).** [Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/kat.pdf). The KAT framework.
 - **Dexter Kozen (2000).** [On Hoare Logic and Kleene Algebra with Tests](https://www.cs.cornell.edu/~kozen/Papers/Hoare.pdf). The algebraic encoding of partial correctness.
