@@ -15,6 +15,10 @@ import RelationAlgebra.TypedKAT.Hypotheses
 import RelationAlgebra.TypedKAT.Syntax
 import RelationAlgebra.TypedKAT.GuardedString
 import RelationAlgebra.TypedKAT.LanguageModel
+import RelationAlgebra.KAT.FreeTest
+import RelationAlgebra.TypedKAT.Semantics
+import RelationAlgebra.TypedKAT.Hom
+import RelationAlgebra.TypedKAT.Free
 import RelationAlgebra.TypedKAT.Untyping
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
