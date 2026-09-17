@@ -1,4 +1,5 @@
 import RelationAlgebra.Kleene.Basic
+import RelationAlgebra.Kleene.Iteration
 import RelationAlgebra.Kleene.Quantale
 import RelationAlgebra.Kleene.Complete
 import RelationAlgebra.KAT.Defs
@@ -12,6 +13,7 @@ import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedConverse
 import RelationAlgebra.TypedBoolean
+import RelationAlgebra.TypedIteration
 import RelationAlgebra.TypedResiduated
 import RelationAlgebra.TypedRA.Syntax
 import RelationAlgebra.TypedRA.Matrix
@@ -33,6 +35,7 @@ import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.Matrix
 import RelationAlgebra.Models.MatrixExt
 import RelationAlgebra.Models.MatrixResidual
+import RelationAlgebra.Models.MatrixIteration
 import RelationAlgebra.Models.SetoidRel
 import RelationAlgebra.Models.FinRel
 import RelationAlgebra.Automata.ZeroOne
