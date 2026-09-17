@@ -32,6 +32,7 @@ import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.Matrix
 import RelationAlgebra.Models.MatrixExt
+import RelationAlgebra.Models.MatrixResidual
 import RelationAlgebra.Models.SetoidRel
 import RelationAlgebra.Models.FinRel
 import RelationAlgebra.Automata.ZeroOne
@@ -80,3 +81,4 @@ import RelationAlgebra.Examples.TypedConverse
 import RelationAlgebra.Examples.ConverseUntyping
 import RelationAlgebra.Examples.TypedRa
 import RelationAlgebra.Examples.TypedResidual
+import RelationAlgebra.Examples.MatrixResidual
