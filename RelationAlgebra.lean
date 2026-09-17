@@ -66,3 +66,4 @@ import RelationAlgebra.Examples.TypedDecide
 import RelationAlgebra.Examples.Untyping
 import RelationAlgebra.Examples.TypedHypotheses
 import RelationAlgebra.Examples.LanguageModel
+import RelationAlgebra.Examples.FreeKAT
