@@ -11,6 +11,10 @@ import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedConverse
+import RelationAlgebra.TypedRA.Syntax
+import RelationAlgebra.TypedRA.Matrix
+import RelationAlgebra.TypedRA.Support
+import RelationAlgebra.TypedRA.Untyping
 import RelationAlgebra.TypedKAT
 import RelationAlgebra.TypedKAT.Hypotheses
 import RelationAlgebra.TypedKAT.Syntax
@@ -71,3 +75,4 @@ import RelationAlgebra.Examples.FreeKAT
 import RelationAlgebra.Examples.Paterson
 import RelationAlgebra.Examples.Paterson.Regression
 import RelationAlgebra.Examples.TypedConverse
+import RelationAlgebra.Examples.ConverseUntyping
