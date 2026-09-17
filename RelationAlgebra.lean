@@ -32,6 +32,7 @@ import RelationAlgebra.TypedKAT.Untyping
 import RelationAlgebra.Models.Rel
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
+import RelationAlgebra.Models.TypedTrace
 import RelationAlgebra.Models.Matrix
 import RelationAlgebra.Models.MatrixExt
 import RelationAlgebra.Models.MatrixResidual
@@ -91,3 +92,4 @@ import RelationAlgebra.Examples.FullRa
 import RelationAlgebra.Examples.Iteration
 import RelationAlgebra.Examples.FiniteRelations
 import RelationAlgebra.Examples.SetoidRelations
+import RelationAlgebra.Examples.TypedTraces

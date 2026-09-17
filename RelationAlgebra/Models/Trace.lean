@@ -43,8 +43,8 @@ pointwise) `+` and `*` instances in Mathlib, the ring-like instances here are **
 
 This is a port of the `traces.v` and `glang.v` theories of Damien Pous'
 [relation-algebra](https://github.com/damien-pous/relation-algebra) library for Rocq/Coq, whose
-organisation we follow.  We only develop the untyped model; the typed model of `traces.v` has no
-counterpart here.
+organisation we follow. This file develops the untyped model; `Models/TypedTrace.lean`
+adds the general typed model, with arbitrary object and action types and shared states.
 -/
 
 open scoped Computability
