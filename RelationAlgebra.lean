@@ -100,3 +100,4 @@ import RelationAlgebra.Examples.FiniteRelations
 import RelationAlgebra.Examples.SetoidRelations
 import RelationAlgebra.Examples.TypedTraces
 import RelationAlgebra.Examples.TypedAllegory
+import RelationAlgebra.Examples.ResiduatedAllegory
