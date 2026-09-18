@@ -309,6 +309,32 @@ compatibility theorems exchange functional/injective and total/surjective.
 See the [worked examples](../RelationAlgebra/Examples/TypedAllegory.lean), including empty
 carriers and the distinction between algebraic and lattice atoms.
 
+## Residuals without Kleene star
+
+`ResiduatedAllegoryCategory C` adds two operations to `AllegoryCategory C`, on the
+same hom-set orders. For `f : X ⟶ Y` and `h : X ⟶ Z`, `f ⇘ h : Y ⟶ Z` is the
+greatest `g` with `f ≫ g ≤ h`. Dually, `h ⇙ g` is the greatest such `f`.
+Enable their notation with `open scoped ResiduatedAllegoryCategory`.
+
+```lean
+open scoped AllegoryCategory ResiduatedAllegoryCategory in
+example {C : Type*} [CategoryTheory.Category C] [AllegoryCategory C]
+    [ResiduatedAllegoryCategory C] {X Y Z : C} (f : X ⟶ Y) (h : X ⟶ Z) :
+    f ≫ (f ⇘ h) ≤ h := ResiduatedAllegoryCategory.comp_ldiv_le f h
+```
+
+The core needs neither Boolean complements nor Kleene star, and assumes no bottom,
+top, or completeness. With bottom, composition annihilates it by adjunction. With
+bottom and top, `ResiduatedAllegoryCategory.isVector_disjoint_iff` proves that a vector
+`g` satisfies `f ⊓ g = ⊥ ↔ gᵒ ≫ f = ⊥`, without using complements.
+
+Existing relation categories inherit the interface and retain their residual
+operations. Finite relations still compute. `ResiduatedAllegory K` is the scalar
+interface; `End` and `SingleObj` exchange left and right residuals because they reverse
+composition. The [examples](../RelationAlgebra/Examples/ResiduatedAllegory.lean) include
+a three-element chain with no complement for its middle element, empty carriers,
+and compatibility with finite relations, setoid relations, and matrices.
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -326,6 +352,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Converse, relation algebra, residuals, allegories, vectors and points | [Converse](../RelationAlgebra/Converse.lean), [Residuated](../RelationAlgebra/Residuated.lean), [Allegory](../RelationAlgebra/Allegory.lean), [Vectors](../RelationAlgebra/Vectors.lean) |
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](../RelationAlgebra/Typed.lean), [TypedKAT](../RelationAlgebra/TypedKAT.lean) |
 | Typed allegories, maps, points, and atoms | [TypedAllegory](../RelationAlgebra/TypedAllegory.lean), [TypedPoints](../RelationAlgebra/TypedPoints.lean), [Boolean/iteration laws](../RelationAlgebra/TypedRelationPredicates.lean), [relational characterization](../RelationAlgebra/Models/RelPoints.lean) |
+| Residuals on weak allegories | [ResiduatedAllegory](../RelationAlgebra/ResiduatedAllegory.lean), [TypedResiduatedAllegory](../RelationAlgebra/TypedResiduatedAllegory.lean) |
 | Typed expressions and guarded-string semantics | [TypedKAT/Syntax](../RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](../RelationAlgebra/TypedKAT/GuardedString.lean), [examples](../RelationAlgebra/Examples/TypedSyntax.lean) |
 | Guarded-string languages as a typed KAT model | [TypedKAT/LanguageModel](../RelationAlgebra/TypedKAT/LanguageModel.lean), [examples](../RelationAlgebra/Examples/LanguageModel.lean) |
 | Expressions modulo the KAT laws and their universal property | [TypedKAT/Free](../RelationAlgebra/TypedKAT/Free.lean), [semantic relations](../RelationAlgebra/TypedKAT/Semantics.lean), [homomorphisms](../RelationAlgebra/TypedKAT/Hom.lean), [examples](../RelationAlgebra/Examples/FreeKAT.lean) |
