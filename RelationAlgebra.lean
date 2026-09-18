@@ -13,6 +13,7 @@ import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
 import RelationAlgebra.TypedConverse
 import RelationAlgebra.TypedBoolean
+import RelationAlgebra.TypedAllegory
 import RelationAlgebra.TypedIteration
 import RelationAlgebra.TypedResiduated
 import RelationAlgebra.TypedRA.Syntax
