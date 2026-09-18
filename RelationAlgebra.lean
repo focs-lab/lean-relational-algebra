@@ -8,6 +8,7 @@ import RelationAlgebra.KAT.Hoare
 import RelationAlgebra.KAT.Hypotheses
 import RelationAlgebra.Converse
 import RelationAlgebra.Residuated
+import RelationAlgebra.ResiduatedAllegory
 import RelationAlgebra.Allegory
 import RelationAlgebra.Vectors
 import RelationAlgebra.Typed
