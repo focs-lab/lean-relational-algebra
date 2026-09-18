@@ -14,6 +14,8 @@ import RelationAlgebra.Typed
 import RelationAlgebra.TypedConverse
 import RelationAlgebra.TypedBoolean
 import RelationAlgebra.TypedAllegory
+import RelationAlgebra.TypedPoints
+import RelationAlgebra.TypedRelationPredicates
 import RelationAlgebra.TypedIteration
 import RelationAlgebra.TypedResiduated
 import RelationAlgebra.TypedRA.Syntax
@@ -31,6 +33,7 @@ import RelationAlgebra.TypedKAT.Hom
 import RelationAlgebra.TypedKAT.Free
 import RelationAlgebra.TypedKAT.Untyping
 import RelationAlgebra.Models.Rel
+import RelationAlgebra.Models.RelPoints
 import RelationAlgebra.Models.Bool
 import RelationAlgebra.Models.Trace
 import RelationAlgebra.Models.TypedTrace
