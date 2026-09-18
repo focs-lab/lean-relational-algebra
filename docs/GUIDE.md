@@ -268,6 +268,47 @@ Top, complement and residuals range only over well-typed traces. Forgetting type
 composition, tests and iteration; it need not preserve top or complement. This general
 trace model has no atom bound and does not require finite states or actions.
 
+## Maps, points, and atoms
+
+`AllegoryCategory C` provides typed composition, converse, intersection, and the modular
+law. It requires no Kleene star or Boolean structure. `RelationCategory` supplies it
+automatically, including for relations, finite relations, setoid relations, and matrices.
+
+For `f : X ⟶ Y`, the predicates in `AllegoryCategory` have these relational meanings:
+
+| Predicate | Meaning |
+| --- | --- |
+| `Functional f` | Each input has at most one output |
+| `Total f` | Every input has an output |
+| `Injective f` | Each output has at most one input |
+| `Surjective f` | Every output has an input |
+| `IsMap f` | Functional and total; exactly the graphs of functions in `RelCat` |
+| `IsPoint f` | A singleton row, with a nonempty target |
+| `IsAtom f` | A singleton pair |
+
+```lean
+example {C : Type*} [CategoryTheory.Category C] [AllegoryCategory C]
+    {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (hf : AllegoryCategory.IsMap f) (hg : AllegoryCategory.IsMap g) :
+    AllegoryCategory.IsMap (f ≫ g) := hf.comp hg
+
+example {X Y : CategoryTheory.RelCat} (f : X → Y) :
+    AllegoryCategory.IsMap (CategoryTheory.RelCat.graph f) :=
+  CategoryTheory.RelCat.graph_isMap f
+```
+
+Points and atoms need top on each hom-set. Their abstract definition of nonemptiness
+quantifies over all objects; it agrees with `f ≠ ⊥` in `RelCat`, but not in every allegory.
+Similarly, `AllegoryCategory.IsAtom` agrees with Mathlib's lattice `IsAtom` for relations;
+the abstract minimality theorem is among **nonempty** morphisms. Every algebraic atom
+factors into two points over any nonempty common target.
+
+Use `open scoped AllegoryCategory` for converse notation `fᵒ` in the weak interface.
+`End` and `SingleObj` reverse composition relative to scalar multiplication, so their
+compatibility theorems exchange functional/injective and total/surjective.
+See the [worked examples](../RelationAlgebra/Examples/TypedAllegory.lean), including empty
+carriers and the distinction between algebraic and lattice atoms.
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -284,6 +325,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Traces, guarded strings, setoid and finite relations | [Models/Trace](../RelationAlgebra/Models/Trace.lean), [Models/TypedTrace](../RelationAlgebra/Models/TypedTrace.lean), [Models/SetoidRelCategory](../RelationAlgebra/Models/SetoidRelCategory.lean), [Models/FinRelCategory](../RelationAlgebra/Models/FinRelCategory.lean) |
 | Converse, relation algebra, residuals, allegories, vectors and points | [Converse](../RelationAlgebra/Converse.lean), [Residuated](../RelationAlgebra/Residuated.lean), [Allegory](../RelationAlgebra/Allegory.lean), [Vectors](../RelationAlgebra/Vectors.lean) |
 | Typed (many-object) Kleene algebra and typed KAT | [Typed](../RelationAlgebra/Typed.lean), [TypedKAT](../RelationAlgebra/TypedKAT.lean) |
+| Typed allegories, maps, points, and atoms | [TypedAllegory](../RelationAlgebra/TypedAllegory.lean), [TypedPoints](../RelationAlgebra/TypedPoints.lean), [Boolean/iteration laws](../RelationAlgebra/TypedRelationPredicates.lean), [relational characterization](../RelationAlgebra/Models/RelPoints.lean) |
 | Typed expressions and guarded-string semantics | [TypedKAT/Syntax](../RelationAlgebra/TypedKAT/Syntax.lean), [TypedKAT/GuardedString](../RelationAlgebra/TypedKAT/GuardedString.lean), [examples](../RelationAlgebra/Examples/TypedSyntax.lean) |
 | Guarded-string languages as a typed KAT model | [TypedKAT/LanguageModel](../RelationAlgebra/TypedKAT/LanguageModel.lean), [examples](../RelationAlgebra/Examples/LanguageModel.lean) |
 | Expressions modulo the KAT laws and their universal property | [TypedKAT/Free](../RelationAlgebra/TypedKAT/Free.lean), [semantic relations](../RelationAlgebra/TypedKAT/Semantics.lean), [homomorphisms](../RelationAlgebra/TypedKAT/Hom.lean), [examples](../RelationAlgebra/Examples/FreeKAT.lean) |

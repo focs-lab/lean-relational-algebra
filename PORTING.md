@@ -70,13 +70,57 @@ corresponding to `level.v`.
 |---|---|---|---|---|---|
 | `lattice.v` | D,T | — | `Preorder`…`CompleteBooleanAlgebra`, `Order.*` | **n/a (Mathlib)** | the lattice structures themselves are all in Mathlib.  What has no counterpart is upstream's level-indexed presentation, which lets one lemma serve every sub-structure; see §7 |
 | `monoid.v` (ordered monoid part) | D,T | `Kleene/Basic.lean`, `Typed.lean` | `Monoid`, `IdemSemiring`, `KleeneAlgebra` | **partial** | the untyped specialisation is complete.  Upstream states these laws *typed*, for `X n m`; only the subset needed downstream is reproved in the typed setting in `Typed.lean` |
-| `monoid.v` (typed / category part) | D,T | `Typed.lean`, `TypedKAT.lean`, `TypedConverse.lean`, `TypedBoolean.lean`, `TypedResiduated.lean` | `CategoryTheory.Category`, `End`, `SingleObj`, `RelCat` | **partial** | typed KA, KAT, converse, Boolean hom-sets, Dedekind and residuals, with `SingleObj`/`End` compatibility and relational/matrix models. The weaker typed allegory and level-indexed hierarchy remain separate gaps |
+| `monoid.v` (typed / category part) | D,T | `Typed.lean`, `TypedKAT.lean`, `TypedConverse.lean`, `TypedBoolean.lean`, `TypedResiduated.lean`, `TypedAllegory.lean` | `CategoryTheory.Category`, `End`, `SingleObj`, `RelCat` | **partial** | typed KA, KAT, converse, Boolean hom-sets, Dedekind, residuals and weak allegories, with `SingleObj`/`End` compatibility and relational/matrix models. The level-indexed hierarchy and weak residuated-allegory interface remain gaps |
 | `monoid.v` (residuals) | D,T | `Residuated.lean`, `TypedResiduated.lean` | `IsQuantale` residuals `⇨ₗ`/`⇨ᵣ` | **done at the Kleene level** | untyped residuated semirings/KAs and genuinely typed residuals, without completeness. `ResiduatedKleeneCategory` uses the existing hom-set order; both adjunctions, variance, cancellation, composition and iteration laws are proved. Rectangular matrices use finite meets |
-| `monoid.v` (allegory/Dedekind) | D,T | `Allegory.lean`, `Vectors.lean` | — | **partial** | untyped allegories with the modular law, the functional/total/injective/surjective/map predicates, vectors, points and the order predicates.  Upstream's allegories are typed, and its residuated-allegory layer is not ported |
+| `monoid.v` (allegory/Dedekind) | D,T | `Allegory.lean`, `TypedAllegory.lean` | — | **done for allegories; residual extension missing** | untyped and typed meet-enriched categories with converse and the modular law, deriving both modular laws and Dedekind. The typed interface requires no joins, bottom, top, complements, residuals, or star. Upstream's weak residuated-allegory layer is not ported |
 | `kleene.v` | T | `Kleene/Basic.lean`, `Kleene/Iteration.lean`, `TypedIteration.lean` | `kstar_mono`, `kstar_idem`, `one_add_mul_kstar`, … | **partial overall; strict iteration done at the KA level** | `a⁺ := a * a∗`, typed endomorphism iteration, both unfolding and rectangular induction rules, monotonicity, constants, transitivity/idempotence, star interaction, sliding, bisimulation, union-of-closures, idempotent boundaries and converse. Relations and zero-one matrices have `TransGen` semantics. Upstream's statements at weaker levels and a full name-by-name audit of the remaining star API are separate |
 | `kat.v` | D,T | `KAT/Defs.lean`, `KAT/Basic.lean`, `TypedKAT.lean` | `BooleanAlgebra` | **done** | both the untyped class and upstream's genuinely typed `KleeneCategoryWithTests`, with typed guarded commands and a typed Hoare triple relating *different* objects |
 | `factors.v` | T | `Residuated.lean`, `TypedResiduated.lean` | — | **done at the Kleene/Boolean levels** | all nineteen statements have untyped and heterogeneous counterparts; see the correspondence below. The four top laws use `ResiduatedKleeneLattice` for scalars and `BooleanKleeneCategory` for typed hom-sets. This does not reproduce every weaker level-indexed assumption of upstream |
-| `relalg.v` | D,T | `Converse.lean`, `Allegory.lean`, `Vectors.lean`, `TypedBoolean.lean` | `StarRing` for converse | **partial** | untyped Dedekind/Schröder/Tarski, functional/total/injective/surjective/map, vectors, points and order predicates. Typed Boolean hom-sets, Dedekind and Schröder are now available. Typed predicates, the `is_atom` theory and lattice-of-points lemmas remain missing |
+| `relalg.v` | D,T | `Converse.lean`, `Allegory.lean`, `Vectors.lean`, `TypedBoolean.lean`, `TypedAllegory.lean`, `TypedPoints.lean`, `TypedRelationPredicates.lean`, `Models/RelPoints.lean` | `StarRing`, lattice `IsAtom` | **covered at the interfaces below; partial at weaker levels** | typed relational predicates, vectors, points, algebraic atoms, minimality and point factorization; Boolean disjointness/complement laws and Kleene closure laws. `RelCat` maps are graphs of functions, points are singleton rows with nonempty targets, and algebraic atoms are lattice atoms/singleton pairs. The residual-only proof of `disjoint_vect_iff'` and upstream's full level-polymorphic generality remain unported |
+
+### Typed predicates, points, and atoms correspondence
+
+This maps the substantive points/atoms results in the
+[pinned upstream `relalg.v`](https://github.com/damien-pous/relation-algebra/blob/2d2af3631929399bbac56f57b3e15302d8697e1c/theories/relalg.v)
+to the `AllegoryCategory` namespace. Upstream's equality/setoid compatibility instances
+are handled by Lean equality. The names here follow execution-order composition `≫`.
+
+| Upstream | Lean counterpart |
+| --- | --- |
+| `is_univalent`, `is_mapping` | `Functional`, `IsMap` |
+| `is_injective`, `is_total`, `is_surjective` | `Injective`, `Total`, `Surjective` |
+| `is_nonempty`, `is_nonempty'` | `IsNonempty`, `IsNonemptyObject` |
+| `nonempty_dom`, `nonempty_cod`, `nonempty_cnv` | `IsNonempty.dom`, `.cod`, `.converse` |
+| `surjective_tx`, `tx_surjective`, `total_xt`, `xt_total` | `Surjective.top_comp`, `surjective_of_top_le`, `Total.comp_top`, `total_of_top_le` |
+| `top_nonempty`, `vector'` | `top_comp_top`, `IsVector.comp_le` |
+| `point_surjective`, `mapping_cnv` | `IsPoint.surjective`, `.converse_isMap` |
+| `dot_univalent_cap`, `dot_cap_injective` | `Functional.comp_inf`, `Injective.inf_comp` |
+| `univalent_antisym`, `surjective_injective_antisym` | `Functional.antisymm`, `Surjective.eq_of_le_injective` |
+| `gen_point`, `leq_xyp`, `leq_pxq` | `IsPoint.extend`, `.le_comp_iff`, `.le_comp_iff_converse` |
+| `point_lattice_atom` | `IsPoint.eq_of_nonempty_vector_le` |
+| `atom_injective`, `atom_univalent`, `atom_cnv` | `IsAtom.injective`, `.functional`, `.converse` |
+| `atom_of_points` (and auxiliary sandwich lemma) | `isAtom_of_points` (with a private helper) |
+| `point_a_top`, `point_a'_top` | `IsAtom.row_isPoint`, `.column_isPoint` |
+| `a_top_a_aux`, `a_top_a` | `IsAtom.row_inf_column`, `.comp_top_comp` |
+| `atom_transitive`, `atom_mono` | `IsAtom.transitive`, `.comp_self_le_id` |
+| `atom_points`, `atom_lattice_atom` | `IsAtom.exists_points`, `.eq_of_nonempty_le` |
+| `disjoint_vect_iff`, `disjoint_vect_ext` | `IsVector.disjoint_iff`, `.disjoint_comp` |
+| `dot_neg_inj`, `dot_neg_surj`, `dot_neg_point` | `Injective.compl_comp_le`, `Surjective.compl_comp_le`, `IsPoint.compl_comp` |
+| `kernel_refl_antisym` | `kernel_eq_id` |
+| reflexive, transitive, symmetric, antisymmetric, PER, preorder, order | `IsReflexive`, `IsTransitive`, `IsSymmetric`, `IsAntisymmetric`, `IsPer`, `IsPreorder`, `IsOrder`, with converse laws |
+| irreflexive, linear, and closure instances | `IsIrreflexive`, `IsLinear`, `isPreorder_kstar`, `isTransitive_kplus`, `IsSymmetric.kstar`/`.kplus`, `IsReflexive.kplus`, `IsTransitive.kplus_eq`/`.kstar_eq` |
+
+`TypedPoints` uses an allegory with top, without Boolean operations or iteration.
+Its nonemptiness predicate quantifies over every pair of objects, exactly as upstream.
+It is **not** defined as inequality with bottom, and algebraic `IsAtom` is **not**
+defined as Mathlib's lattice atom. `Models/RelPoints` proves these equivalences for
+heterogeneous relations, without assuming inhabited carriers. The regression suite
+also exhibits a degenerate one-object allegory where an algebraic atom equals bottom.
+
+Boolean and iteration additions use the canonical allegory of `RelationCategory`.
+Thus the mathematical results are available, but some assume more structure than
+their upstream level-indexed versions. In particular, this does not yet supply an
+independent residuated-allegory interface or the residual-only `disjoint_vect_iff'`.
 
 ### Factors correspondence
 
@@ -235,13 +279,15 @@ DONE: recursive proved rewrites + structural inclusion → Boolean/residual `ra`
 DONE: composition + star → strict iteration, typed laws, nonempty paths, tactic preprocessing
 DONE: finite and invariant relations → heterogeneous categories and quotient interpretation
 DONE: arbitrary action-path typing + fusion → general typed traces and restricted residuals
+DONE: weak typed allegories → relational predicates → points, atoms, minimality and factorization
+DONE: typed predicates + Boolean/Kleene structure → disjointness, complement and closure laws
 
 REMAINING, in dependency order:
   level-indexed syntactic untyping for structures below KA with converse
   full Boolean/residual expression syntax and its free-model/untyping results
 
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
-  typed allegories and predicates; the `is_atom` / lattice-of-points fragment of `relalg.v`
+  weak residuated-allegory interface and remaining weaker-level predicate variants
   concrete assignment for IMP (upstream `imp.v`: `aff_stack`, `aff_comm`, `aff_ite`)
 ```
 
@@ -429,9 +475,10 @@ every headline theorem depends only on `propext`, `Classical.choice`, `Quot.soun
 The KA/KAT release milestone is complete. These are separately scoped extensions, not
 prerequisites for using or releasing the library:
 
-1. **Relation-algebra theory** — typed allegories and predicates, plus `is_atom` and the
-   lattice-of-points results. Typed Boolean/Dedekind/residual interfaces and matrix
-   residuals are now available.
+1. **Weaker relation-algebra interfaces** — the independent residuated-allegory layer
+   and remaining weaker-level predicate variants. Typed allegories, predicates, points,
+   atoms and their minimality/factorization results are now available, alongside typed
+   Boolean/Dedekind/residual interfaces and matrix residuals.
 2. **Syntax and automation foundations** — full Boolean/residual expression syntax,
    and weaker level-indexed untyping. Search completeness is a further research extension;
    upstream also leaves derivative-search completeness unproved. `ra` already handles the extra
