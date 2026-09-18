@@ -19,6 +19,7 @@ import RelationAlgebra.TypedPoints
 import RelationAlgebra.TypedRelationPredicates
 import RelationAlgebra.TypedIteration
 import RelationAlgebra.TypedResiduated
+import RelationAlgebra.TypedResiduatedAllegory
 import RelationAlgebra.TypedRA.Syntax
 import RelationAlgebra.TypedRA.Matrix
 import RelationAlgebra.TypedRA.Support
