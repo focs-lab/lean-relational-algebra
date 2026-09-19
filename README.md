@@ -116,7 +116,7 @@ languages of typed traces (`TraceCat`). The [model guide](docs/GUIDE.md#concrete
 links to executable examples. The library also includes a free typed KAT with its
 [universal property](RelationAlgebra/Examples/FreeKAT.lean).
 
-Worked applications include [IMP](RelationAlgebra/Examples/Imp.lean),
+Worked applications include [IMP with named assignments](docs/GUIDE.md#named-variable-imp-programs),
 [twelve compiler optimizations](RelationAlgebra/Examples/CompilerOpts.lean), and
 [Paterson’s flowchart equivalence](RelationAlgebra/Examples/Paterson.lean).
 Use the [library map](docs/GUIDE.md#library-guide) to find definitions and theorems.

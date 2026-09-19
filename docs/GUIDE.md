@@ -335,6 +335,55 @@ composition. The [examples](../RelationAlgebra/Examples/ResiduatedAllegory.lean)
 a three-element chain with no complement for its middle element, empty carriers,
 and compatibility with finite relations, setoid relations, and matrices.
 
+## Named-variable IMP programs
+
+Import [Examples/Imp/Assignments](../RelationAlgebra/Examples/Imp/Assignments.lean)
+to use `IMP.Store Loc Val`, a function from locations to values. With `open scoped IMP`,
+`x ::= e` evaluates `e` in the old store and updates only `x`; `p ;; q` runs `p` then `q`.
+Both expand to the existing IMP commands, so their big-step semantics and KAT denotation agree.
+
+```lean
+import RelationAlgebra.Examples.Imp.Assignments
+
+namespace AssignmentExample
+open IMP
+open scoped IMP
+
+abbrev Memory := Store String ℕ
+
+-- Moving the second assignment first requires substituting for its read of x.
+example (x y : String) (hxy : x ≠ y) :
+    ((x ::= (fun _ : Memory ↦ 1)) ;; (y ::= (fun s ↦ s x))).Equiv
+      ((y ::= (fun _ ↦ 1)) ;; (x ::= (fun _ ↦ 1))) := by
+  simpa only [Store.esubst_var] using
+    Store.aff_comm x y (fun _ : Memory ↦ 1) (fun s ↦ s x) hxy (Store.fresh_const _ _)
+
+-- Substitution gives the assignment's exact weakest precondition.
+example (x : String) (e : Memory → ℕ) (post : Set Memory) :
+    HoareCmd (Store.subst x e post) (x ::= e) post := Store.hoare_assign x e post
+
+end AssignmentExample
+```
+
+`Store.esubst x e f` evaluates expression `f` after the update; `Store.subst x e b`
+does the same for a predicate. `Store.Fresh x e` means that changing `x` to **any** value
+leaves `e` unchanged. This is a semantic condition on functions, not a syntactic variable check.
+
+The four laws from Pous's `imp.v` are available in `IMP.Store`:
+
+| Law | Use |
+| --- | --- |
+| `aff_stack` | Collapse consecutive writes to one location, substituting into the second expression |
+| `aff_idem` | Remove a repeated assignment when its expression is fresh for its target |
+| `aff_comm` | Reorder distinct writes, substituting into the second expression; the first expression must be fresh for the second location |
+| `aff_ite` | Distribute an assignment into both conditional branches, substituting into the guard |
+
+For a custom memory model, use `IMP.Assignment` with your own update function. Overwrite
+and commutation laws are explicit premises only where needed; `aff_ite` needs neither.
+The [worked examples](../RelationAlgebra/Examples/Imp/AssignmentsRegression.lean) include
+a countdown loop that clears one location and preserves another, a separate termination
+proof, and counterexamples to dropping the assignment laws' side conditions.
+
 ## Library guide
 
 The library reuses Mathlib's `KleeneAlgebra`, `BooleanAlgebra`, `SetRel`, `Language`,
@@ -365,7 +414,7 @@ by `KleeneAlgebraWithTests T K` (abbreviated `KAT T K`).
 | Reusing untyped laws in typed models | [KAT untyping](../RelationAlgebra/TypedKAT/Untyping.lean), [converse untyping](../RelationAlgebra/TypedRA/Untyping.lean) |
 | Typed converse, Boolean relation algebra, and residuals | [TypedConverse](../RelationAlgebra/TypedConverse.lean), [TypedBoolean](../RelationAlgebra/TypedBoolean.lean), [TypedResiduated](../RelationAlgebra/TypedResiduated.lean) |
 | Rectangular matrix residuals and relation algebra | [Models/MatrixResidual](../RelationAlgebra/Models/MatrixResidual.lean), [examples](../RelationAlgebra/Examples/MatrixResidual.lean) |
-| The IMP while-language on top of KAT | [Examples/Imp](../RelationAlgebra/Examples/Imp.lean) |
+| The IMP while-language on top of KAT | [Examples/Imp](../RelationAlgebra/Examples/Imp.lean), [named assignments](../RelationAlgebra/Examples/Imp/Assignments.lean), [worked programs](../RelationAlgebra/Examples/Imp/AssignmentsRegression.lean) |
 | Certified compiler optimisations | [Examples/CompilerOpts](../RelationAlgebra/Examples/CompilerOpts.lean) |
 | Paterson’s S6A = S6E flowchart equivalence | [Examples/Paterson](../RelationAlgebra/Examples/Paterson.lean), [schemes](../RelationAlgebra/Examples/Paterson/Programs.lean), [regressions](../RelationAlgebra/Examples/Paterson/Regression.lean) |
 

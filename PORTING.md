@@ -250,7 +250,7 @@ This distinction matters and is easy to blur:
 
 | Upstream | Kinds | Lean counterpart | Status |
 |---|---|---|---|
-| `examples/imp.v` | D,T,E | `Examples/Imp.lean` | **partial** — inductive big-step semantics, `bigStep_iff_denote`, `hoareCmd_iff`, the IMP Hoare rules, and nine program equivalences closed by `kat`.  **Not ported**: upstream's *specialised* assignment layer, namely a store type with named locations, the derived `x := e` notation, and the assignment lemmas `aff_stack`, `aff_idem`, `aff_comm`, `aff_ite`.  Concrete assignments are perfectly expressible as they stand — instantiate `σ` with a store and use `Cmd.assign (Function.update s x v)` — so what is missing is the definitions and the lemmas about them, not the expressive power. `Examples/Paterson/Model.lean` now supplies a separate five-cell assignment and substitution model for Paterson’s proof; the general IMP interface remains separate |
+| `examples/imp.v` | D,T,E | `Examples/Imp.lean`, `Examples/Imp/Assignments.lean` | **done** — inductive big-step semantics, `bigStep_iff_denote`, `hoareCmd_iff`, the IMP Hoare rules, nine program equivalences, and all four named-assignment laws: `aff_stack`, `aff_idem`, `aff_comm`, `aff_ite`. `IMP.Assignment` accepts an abstract update function with upstream's overwrite/commutation premises, generalizing values from naturals to any type. `IMP.Store` supplies functional stores and scoped `x ::= e` / `p ;; q` syntax. Substitution and freshness are semantic, as upstream; `aff_comm` substitutes the moved expression and requires freshness only of the first expression for the second location. Regressions include operational transport, Hoare/KAT reasoning, a terminating loop, and counterexamples to dropping side conditions. Paterson's five-cell expression syntax remains a separate application |
 | `examples/compiler_opts.v` | T,E | `Examples/CompilerOpts.lean` | **done** — **all twelve** upstream optimisation statements are ported and proved, with the exact correspondence tabulated in the file.  The four that upstream proves with `mrewrite` (§3.2, §3.3, §3.4i, §3.4ii) are proved here by explicit associativity steps in `calc` plus `hkat`; for §3.4ii the route taken is shorter than upstream's.  Three of upstream's five preliminary lemmas are ported; `lemma_1'` and `lemma_1''` are unused and omitted |
 | `examples/paterson.v` | D,T,E | `Examples/Paterson.lean`, `Examples/Paterson/` | **done** — `Paterson.paterson` proves the same S6A = S6E relational statement as Pous, for arbitrary `f`, `g`, and `P` on natural-valued five-cell stores. The development includes expression substitution, the four assignment laws, test commutation, agreement facts, and dead-store elimination through iteration. All assignment hypotheses are derived from updates. The larger `hkat` calls are factored into reusable abstract KAT lemmas. This is the two-scheme equivalence, not a general flowchart-to-expression translation. |
 
@@ -307,6 +307,7 @@ DONE: arbitrary action-path typing + fusion → general typed traces and restric
 DONE: weak typed allegories → relational predicates → points, atoms, minimality and factorization
 DONE: typed predicates + Boolean/Kleene structure → disjointness, complement and closure laws
 DONE: residual adjunctions on weak allegories → bottom annihilation and residual-only disjointness
+DONE: abstract memory updates + functional stores → all four IMP assignment laws and substitution
 
 REMAINING, in dependency order:
   level-indexed syntactic untyping for structures below KA with converse
@@ -314,7 +315,6 @@ REMAINING, in dependency order:
 
 INDEPENDENT GAPS found by the 2026-09-15 audit, each self-contained:
   remaining weaker-level predicate and iteration variants
-  concrete assignment for IMP (upstream `imp.v`: `aff_stack`, `aff_comm`, `aff_ite`)
 ```
 
 ### KAT completeness, as proved here
@@ -508,8 +508,8 @@ prerequisites for using or releasing the library:
 2. **Syntax and automation foundations** — full Boolean/residual expression syntax,
    and weaker level-indexed untyping. Search completeness is a further research extension;
    upstream also leaves derivative-search completeness unproved. `ra` already handles the extra
-   operations by direct proved rewrites and bounded structural inclusion. IMP's specialized
-   assignments and the other independent gaps in §8 can be developed separately.
+   operations by direct proved rewrites and bounded structural inclusion. The other
+   independent gaps in §8 can be developed separately.
 
 ## 10. Development history
 
