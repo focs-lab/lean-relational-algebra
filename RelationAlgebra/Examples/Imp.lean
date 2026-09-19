@@ -23,17 +23,15 @@ are derived from the abstract KAT rules of `RelationAlgebra.KAT.Hoare`.  The pay
 `IMP.hoareCmd_iff`: the algebraically derived triples say exactly what the operational
 semantics says they should.
 
-## Divergence from upstream
+## Assignments and upstream conventions
 
-Upstream `imp.v` fixes a type of memory locations, a type of states, and an update function,
-so that an assignment is `x := e`.  Here an assignment is an arbitrary state update
-`Cmd.assign (f : σ → σ)`; the upstream `x := e` is the special case
-`f = fun s ↦ update x (e s) s`.  This is a genuine simplification: it keeps the file focused
-on the algebra, at the price of dropping upstream's section on stacking, commuting and
-substituting assignments, which is about the concrete update function and not about KAT.
-The standard assignment axiom survives in the form `IMP.HoareCmd.assign`, which uses the
-preimage `f ⁻¹' d` as the weakest precondition — the semantic counterpart of upstream's
-syntactic substitution `subst`.
+The core command `Cmd.assign (f : σ → σ)` accepts any state update. Import
+`RelationAlgebra.Examples.Imp.Assignments` for upstream's named-location interface:
+`Assignment.cmd update x e` updates `x` with the value of `e` in the old state.
+That module supplies semantic substitution and freshness, all four upstream assignment
+laws, and functional stores `Store Loc Val` with scoped `x ::= e` notation. Values may
+have any type; upstream fixes natural numbers. The Hoare assignment rule uses predicate
+preimage as the weakest precondition, both here and in the named-location interface.
 
 Upstream states the `while` rule of the big-step semantics by re-using sequencing; we use the
 equivalent three-premise textbook rule, which makes the induction slightly more direct.
@@ -213,8 +211,8 @@ theorem bigStep_iff_denote (c : Cmd σ) (s t : σ) : BigStep c s t ↔ s ~[c.den
 /-! ## Program equivalences
 
 These are the equivalences of upstream `imp.v`, all discharged by the `kat` decision
-procedure after unfolding the denotation.  The `kat` tactic currently needs a
-`CompleteKleeneAlgebra`, so they are stated in the relational model. -/
+procedure after unfolding the denotation. `kat` works in arbitrary Kleene algebras with
+tests; these examples use the relational interpretation of IMP commands. -/
 
 section Equivalences
 
