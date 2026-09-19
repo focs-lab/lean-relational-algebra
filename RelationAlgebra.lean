@@ -78,6 +78,7 @@ import RelationAlgebra.Examples.Basic
 import RelationAlgebra.Examples.Decide
 import RelationAlgebra.Examples.Imp
 import RelationAlgebra.Examples.Imp.Assignments
+import RelationAlgebra.Examples.Imp.AssignmentsRegression
 import RelationAlgebra.Examples.Models
 import RelationAlgebra.Examples.Coherence
 import RelationAlgebra.Examples.CompilerOpts
